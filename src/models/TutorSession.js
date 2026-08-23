@@ -22,6 +22,11 @@ const TutorMessageSchema = new mongoose.Schema({
   },
 });
 
+const getDefaultContextWindow = () => {
+  const envVal = Number(process.env.TUTOR_MAX_CONTEXT_MESSAGES);
+  return !isNaN(envVal) && envVal >= 2 ? envVal : 6;
+};
+
 const TutorSessionSchema = new mongoose.Schema(
   {
     userId: {
@@ -45,9 +50,9 @@ const TutorSessionSchema = new mongoose.Schema(
     },
     maxContextMessages: {
       type: Number,
-      default: 6, // Janela deslizante de 6 mensagens para economia radical de tokens
+      default: getDefaultContextWindow,
       min: 2,
-      max: 12,
+      max: 30,
     },
     active: {
       type: Boolean,
@@ -72,9 +77,10 @@ TutorSessionSchema.methods.appendMessage = function (role, content, feedback = n
     timestamp: new Date(),
   });
 
+  const limit = this.maxContextMessages || getDefaultContextWindow();
   // Mantém apenas as últimas N mensagens configuradas na janela deslizante
-  if (this.messages.length > this.maxContextMessages) {
-    this.messages = this.messages.slice(-this.maxContextMessages);
+  if (this.messages.length > limit) {
+    this.messages = this.messages.slice(-limit);
   }
 
   return this;
@@ -94,11 +100,14 @@ TutorSessionSchema.methods.getSanitizedHistory = function () {
  * Helper estático para buscar ou criar a sessão ativa do usuário
  */
 TutorSessionSchema.statics.getActiveSession = async function (userId, cefrLevel = 'B1', topic = null) {
+  const defaultWindow = getDefaultContextWindow();
+
   if (mongoose.connection.readyState !== 1) {
     return new this({
       userId,
       cefrLevel,
       topic: topic || 'General Conversation & Daily English',
+      maxContextMessages: defaultWindow,
       messages: [],
     });
   }
@@ -110,6 +119,7 @@ TutorSessionSchema.statics.getActiveSession = async function (userId, cefrLevel 
       userId,
       cefrLevel,
       topic: topic || 'General Conversation & Daily English',
+      maxContextMessages: defaultWindow,
       messages: [],
     });
     await session.save();

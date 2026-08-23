@@ -132,5 +132,15 @@ describe('GenAI Service - Mongoose Models Unit Tests', () => {
         { role: 'assistant', content: 'Good morning! Ready for today?' },
       ]);
     });
+
+    it('deve usar o valor de process.env.TUTOR_MAX_CONTEXT_MESSAGES quando instanciado', () => {
+      process.env.TUTOR_MAX_CONTEXT_MESSAGES = '8';
+      const session = new TutorSession({
+        userId: 'student_env_test',
+      });
+
+      expect(session.maxContextMessages).toBe(8);
+      delete process.env.TUTOR_MAX_CONTEXT_MESSAGES;
+    });
   });
 });

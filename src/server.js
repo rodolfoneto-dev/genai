@@ -17,7 +17,7 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 // ==========================================
 // Healthcheck & Diagnóstico
 // ==========================================
-app.get('/health', (req, res) => {
+app.get(['/health', '/genai/health'], (req, res) => {
   const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
   const aiProviders = {
     gemini: Boolean(process.env.GEMINI_API_KEY),
