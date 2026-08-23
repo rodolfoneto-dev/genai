@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  genai:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: englishfox-genai-local
+    restart: unless-stopped
+    ports:
+      - "4004:4004"
+    environment:
+      - PORT=4004
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb://mongo-genai:27017/englishfox_genai
+      - JWT_SECRET=supersecret_staging_jwt_key_please_change
+      - DEFAULT_AI_PROVIDER=gemini
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+    depends_on:
+      - mongo-genai
+    networks:
+      - genai-network
+
+  mongo-genai:
+    image: mongo:7.0
+    container_name: englishfox-mongo-genai-local
+    restart: unless-stopped
+    ports:
+      - "27018:27017"
+    volumes:
+      - genai-mongo-data:/data/db
+    networks:
+      - genai-network
+
+networks:
+  genai-network:
+    driver: bridge
+
+volumes:
+  genai-mongo-data:
