@@ -4,7 +4,8 @@ const BaseAiAdapter = require('./base.adapter');
 class ClaudeAdapter extends BaseAiAdapter {
   constructor() {
     super('claude');
-    this.apiKey = process.env.ANTHROPIC_API_KEY || '';
+    const rawKey = process.env.ANTHROPIC_API_KEY || '';
+    this.apiKey = rawKey.replace(/^["']|["']$/g, '').trim();
     this.defaultModel = process.env.ANTHROPIC_MODEL || 'claude-3-5-haiku-20241022';
     this.client = this.apiKey ? new Anthropic({ apiKey: this.apiKey }) : null;
   }

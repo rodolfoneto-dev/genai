@@ -4,7 +4,8 @@ const BaseAiAdapter = require('./base.adapter');
 class GeminiAdapter extends BaseAiAdapter {
   constructor() {
     super('gemini');
-    this.apiKey = process.env.GEMINI_API_KEY || '';
+    const rawKey = process.env.GEMINI_API_KEY || '';
+    this.apiKey = rawKey.replace(/^["']|["']$/g, '').trim();
     this.defaultModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
     this.client = this.apiKey ? new GoogleGenerativeAI(this.apiKey) : null;
   }
