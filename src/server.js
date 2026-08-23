@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 const { connectDB } = require('./config/db');
 
 const app = express();
-const PORT = process.env.PORT || 4004;
+const PORT = Number(process.env.PORT) || 4004;
 
 // ==========================================
 // Middlewares Globais
