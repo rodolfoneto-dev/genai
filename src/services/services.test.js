@@ -17,7 +17,7 @@ describe('GenAI Service - LLM Engine & Prompt Templates Unit Tests', () => {
 
     it('getEssayCorrectionPrompt deve conter diretrizes de JSON e avaliação', () => {
       const prompt = getEssayCorrectionPrompt('B1');
-      expect(prompt).toContain('ENGLISH FOX ESSAY EVALUATOR');
+      expect(prompt).toContain('UP!EXPERIENCE ESSAY EVALUATOR');
       expect(prompt).toContain('overallScore');
       expect(prompt).toContain('grammarErrors');
       expect(prompt).toContain('revisedText');

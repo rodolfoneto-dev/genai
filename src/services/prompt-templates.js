@@ -18,8 +18,9 @@ const CEFR_GUIDELINES = {
 const getTutorPrompt = (cefrLevel = 'B1', topic = 'General Daily English') => {
   const levelGuide = CEFR_GUIDELINES[cefrLevel] || CEFR_GUIDELINES.B1;
 
-  return `[ROLE: ENGLISH FOX TUTOR]
-You are "Fox", an empathetic, highly encouraging English tutor for ESL students.
+  return `[ROLE: UP!EXPERIENCE TUTOR - METODOLOGIA APPA]
+You are "UP! Tutor", an empathetic, highly encouraging English tutor for UP!Experience English School.
+You guide the student using the APPA methodology (Assimilação, Prática, Problematização, Aplicação) to build real-world fluency.
 Current Student Level: CEFR ${cefrLevel}
 Target Topic: "${topic}"
 
@@ -36,8 +37,8 @@ Target Topic: "${topic}"
  * Prompt de Sistema para Correção de Redações e Textos
  */
 const getEssayCorrectionPrompt = (cefrLevel = 'B1') => {
-  return `[ROLE: ENGLISH FOX ESSAY EVALUATOR]
-You are an expert ESL writing examiner evaluating a student's text.
+  return `[ROLE: UP!EXPERIENCE ESSAY EVALUATOR]
+You are an expert ESL writing examiner for UP!Experience English School evaluating a student's text.
 Expected Student CEFR Level: ${cefrLevel}
 
 [TASK INSTRUCTIONS]
@@ -72,8 +73,8 @@ Respond ONLY with valid JSON. Do not include markdown code fences or conversatio
 const getExerciseGenerationPrompt = (topic = 'Simple Past', cefrLevel = 'B1', count = 3, type = 'mixed') => {
   const levelGuide = CEFR_GUIDELINES[cefrLevel] || CEFR_GUIDELINES.B1;
 
-  return `[ROLE: ENGLISH FOX CURRICULUM GENERATOR]
-You are an ESL pedagogical author creating high-impact exercises for English Fox Academy.
+  return `[ROLE: UP!EXPERIENCE CURRICULUM GENERATOR]
+You are an ESL pedagogical author creating high-impact exercises for UP!Experience English School.
 Topic: "${topic}"
 Target Level: CEFR ${cefrLevel} (${levelGuide})
 Quantity: Exactly ${count} exercises

@@ -1,18 +1,18 @@
 const openApiSpec = {
   openapi: '3.0.0',
   info: {
-    title: 'English Fox - GenAI Service API',
+    title: 'UP!Experience - GenAI Service API',
     version: '1.0.0',
-    description: 'Microsserviço de Inteligência Artificial Generativa para tutoria, correção de redações e geração de exercícios pedagógicos para a plataforma English Fox.',
+    description: 'Microsserviço de Inteligência Artificial Generativa para tutoria, correção de redações e geração de exercícios pedagógicos para a plataforma UP!Experience.',
     contact: {
-      name: 'English Fox Platform Team',
-      email: 'dev@englishfox.com.br',
+      name: 'UP!Experience Platform Team',
+      email: 'atendimento@upexperience.com.br',
     },
   },
   servers: [
     { url: 'http://localhost:4004', description: 'Servidor Local GenAI' },
     { url: 'http://localhost:8080/genai', description: 'Edge Gateway Local' },
-    { url: 'https://staging.fox.vibecodia.com.br/genai', description: 'Staging Gateway' },
+    { url: 'https://upexperience.vibecodia.com.br/genai', description: 'Staging Gateway' },
   ],
   tags: [
     { name: 'Tutor', description: 'Conversação interativa com o tutor Fox' },

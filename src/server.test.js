@@ -28,7 +28,7 @@ describe('GenAI Service - Server Integration Tests', () => {
       expect.objectContaining({
         openapi: '3.0.0',
         info: expect.objectContaining({
-          title: 'English Fox - GenAI Service API',
+          title: 'UP!Experience - GenAI Service API',
         }),
       })
     );
