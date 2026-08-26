@@ -15,20 +15,16 @@ const openApiSpec = {
     { url: 'https://upexperience.vibecodia.com.br/genai', description: 'Staging Gateway' },
   ],
   tags: [
-    { name: 'Tutor', description: 'Conversação interativa com o tutor Fox' },
-    { name: 'Correção', description: 'Correção gramatical e avaliação de redações' },
-    { name: 'Exercícios', description: 'Geração sob demanda de exercícios pedagógicos' },
-    { name: 'Quotas & FinOps', description: 'Consulta de saldo de tokens e métricas de custos' },
-    { name: 'Diagnóstico', description: 'Health check e especificações' },
+    { name: 'GenAI & Tutor', description: 'Tutor virtual, correção estruturada de redação, geração de exercícios e quotas FinOps' },
   ],
   paths: {
-    '/health': {
+    '/genai/health': {
       get: {
-        tags: ['Diagnóstico'],
+        tags: ['GenAI & Tutor'],
         summary: 'Verificação de Saúde do GenAI Service',
         responses: {
           '200': {
-            description: 'Serviço ativo e operacional',
+            description: 'Serviço GenAI ativo e operacional',
           },
         },
       },

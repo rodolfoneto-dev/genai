@@ -35,11 +35,28 @@ app.get(['/health', '/genai/health'], (req, res) => {
   });
 });
 
-const openApiSpec = require('./config/openapi');
+const {
+  openApiSpec,
+  swaggerMarkdown,
+  swaggerMarkdownHtml,
+  swaggerUiHtml,
+} = require('./config/swagger');
 
 // ==========================================
-// Especificação OpenAPI 3.0 (/docs.json)
+// Documentação OpenAPI 3.0 & Swagger UI
 // ==========================================
+app.get(['/docs', '/docs/'], (req, res) => {
+  return res.send(swaggerUiHtml);
+});
+
+app.get('/docs/preview', (req, res) => {
+  return res.send(swaggerMarkdownHtml);
+});
+
+app.get('/docs.md', (req, res) => {
+  return res.type('text/markdown').send(swaggerMarkdown);
+});
+
 app.get('/docs.json', (req, res) => {
   return res.status(200).json(openApiSpec);
 });
