@@ -17,7 +17,7 @@ const payloads = {
     name: 'Aluno Teste GenAI',
     role: 'aluno',
     status: 'active',
-    email: 'aluno@englishfox.com.br',
+    email: 'aluno@upexperience.com.br',
     emailVerified: true,
   },
   professor: {
@@ -25,7 +25,7 @@ const payloads = {
     name: 'Professor Teste GenAI',
     role: 'professor',
     status: 'active',
-    email: 'professor@englishfox.com.br',
+    email: 'professor@upexperience.com.br',
     emailVerified: true,
   },
   admin: {
@@ -33,7 +33,7 @@ const payloads = {
     name: 'Admin Master GenAI',
     role: 'admin',
     status: 'active',
-    email: 'admin@englishfox.com.br',
+    email: 'admin@upexperience.com.br',
     emailVerified: true,
   },
 };
