@@ -49,13 +49,14 @@ const renderMarkdownViewerHtml = (markdownContent) => {
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GenAI Service - API Docs</title>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0d1117; color: #c9d1d9; margin: 0; padding: 40px 20px; display: flex; justify-content: center; }
     .container { max-width: 860px; width: 100%; }
     .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #30363d; flex-wrap: wrap; gap: 12px; }
-    .nav-links { display: flex; gap: 10px; }
+    .nav-links { display: flex; gap: 10px; flex-wrap: wrap; }
     .btn { background: #238636; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; text-decoration: none; font-size: 14px; }
     .btn:hover { background: #2ea043; }
     .btn-secondary { background: #21262d; border: 1px solid #30363d; color: #c9d1d9; }
@@ -69,9 +70,9 @@ const renderMarkdownViewerHtml = (markdownContent) => {
   <div class="container">
     <div class="header-actions">
       <div class="nav-links">
-        <a href="/docs" class="btn btn-secondary">⚡ Swagger Interativo</a>
-        <a href="/docs.json" class="btn btn-secondary" target="_blank">📋 JSON Spec</a>
-        <a href="/docs.md" class="btn btn-secondary" target="_blank">📝 Raw .MD</a>
+        <a href="/docs/genai/" class="btn btn-secondary">⚡ Swagger Interativo</a>
+        <a href="/docs/genai/json" class="btn btn-secondary" target="_blank">📋 JSON Spec</a>
+        <a href="/docs/genai/md" class="btn btn-secondary" target="_blank">📝 Raw .MD</a>
       </div>
     </div>
     <div id="content"></div>
@@ -88,6 +89,7 @@ const renderSwaggerUiHtml = () => {
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GenAI Service - Swagger UI</title>
   <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
   <style>
@@ -101,7 +103,7 @@ const renderSwaggerUiHtml = () => {
   <script>
     window.onload = function() {
       SwaggerUIBundle({
-        url: window.location.pathname.replace(/\\/docs\\/?$/, '/docs.json'),
+        spec: ${JSON.stringify(openApiSpec)},
         dom_id: '#swagger-ui',
         deepLinking: true,
         presets: [SwaggerUIBundle.presets.apis],
