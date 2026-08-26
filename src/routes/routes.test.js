@@ -5,19 +5,19 @@ const { app } = require('../server');
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_staging_jwt_key_please_change';
 
 const studentToken = jwt.sign(
-  { sub: 'student_test_1', name: 'Aluno Teste', role: 'aluno', status: 'active', email: 'aluno@englishfox.com.br' },
+  { sub: 'student_test_1', name: 'Aluno Teste', role: 'aluno', status: 'active', email: 'aluno@upexperience.com.br' },
   JWT_SECRET,
   { expiresIn: '1h' }
 );
 
 const teacherToken = jwt.sign(
-  { sub: 'teacher_test_1', name: 'Professor Teste', role: 'professor', status: 'active', email: 'professor@englishfox.com.br' },
+  { sub: 'teacher_test_1', name: 'Professor Teste', role: 'professor', status: 'active', email: 'professor@upexperience.com.br' },
   JWT_SECRET,
   { expiresIn: '1h' }
 );
 
 const adminToken = jwt.sign(
-  { sub: 'admin_test_1', name: 'Admin Master', role: 'admin', status: 'active', email: 'admin@englishfox.com.br' },
+  { sub: 'admin_test_1', name: 'Admin Master', role: 'admin', status: 'active', email: 'admin@upexperience.com.br' },
   JWT_SECRET,
   { expiresIn: '1h' }
 );

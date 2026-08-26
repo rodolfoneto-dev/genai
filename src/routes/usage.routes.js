@@ -78,7 +78,7 @@ router.get('/analytics', authenticate, checkRole('admin'), async (req, res, next
     }
 
     return res.status(200).json({
-      finOpsReport: 'English Fox GenAI Service - Cost & Usage Analytics',
+      finOpsReport: 'UP!Experience GenAI Service - Cost & Usage Analytics',
       generatedAt: new Date().toISOString(),
       filters: { startDate: startDate || null, endDate: endDate || null },
       ...analytics,

@@ -67,7 +67,7 @@ describe('GenAI Service - Auth Middleware', () => {
 
     it('deve autenticar e preencher req.user com token válido', () => {
       const validToken = jwt.sign(
-        { sub: 'user_student_1', name: 'Maria Silva', role: 'aluno', status: 'active', email: 'maria@englishfox.com.br' },
+        { sub: 'user_student_1', name: 'Maria Silva', role: 'aluno', status: 'active', email: 'maria@upexperience.com.br' },
         JWT_SECRET,
         { expiresIn: '1h' }
       );
@@ -80,7 +80,7 @@ describe('GenAI Service - Auth Middleware', () => {
         name: 'Maria Silva',
         role: 'aluno',
         status: 'active',
-        email: 'maria@englishfox.com.br',
+        email: 'maria@upexperience.com.br',
         emailVerified: false,
       });
     });
