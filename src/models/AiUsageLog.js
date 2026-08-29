@@ -21,7 +21,7 @@ const AiUsageLogSchema = new mongoose.Schema(
     },
     provider: {
       type: String,
-      enum: ['gemini', 'claude'],
+      enum: ['gemini', 'claude', 'opencode', 'deepseek'],
       required: true,
     },
     model: {
@@ -90,6 +90,11 @@ const PRICING_TABLE = {
   'gemini-1.5-flash': { input: 0.000075, output: 0.0003 },
   'claude-3-5-haiku-20241022': { input: 0.0008, output: 0.004 },
   'claude-3-5-haiku': { input: 0.0008, output: 0.004 },
+  'big-pickle': { input: 0.0001, output: 0.0002 },
+  'deepseek-chat': { input: 0.00014, output: 0.00028 },
+  'deepseek-reasoner': { input: 0.00055, output: 0.00219 },
+  'deepseek-v4-flash': { input: 0.00014, output: 0.00028 },
+  'deepseek-v4-pro': { input: 0.00055, output: 0.00219 },
 };
 
 /**

@@ -26,6 +26,8 @@ app.get(['/health', '/genai/health'], (req, res) => {
   const aiProviders = {
     gemini: Boolean(process.env.GEMINI_API_KEY),
     claude: Boolean(process.env.ANTHROPIC_API_KEY),
+    opencode: Boolean(process.env.OPENCODE_API_KEY),
+    deepseek: Boolean(process.env.DEEPSEEK_API_KEY),
     defaultProvider: process.env.DEFAULT_AI_PROVIDER || 'gemini',
   };
 

@@ -1,6 +1,7 @@
 const GeminiAdapter = require('./adapters/gemini.adapter');
 const ClaudeAdapter = require('./adapters/claude.adapter');
 const OpencodeAdapter = require('./adapters/opencode.adapter');
+const DeepseekAdapter = require('./adapters/deepseek.adapter');
 const MockAiAdapter = require('./adapters/mock.adapter');
 const { CircuitBreaker, executeWithRetry } = require('./resilience');
 
@@ -9,9 +10,11 @@ class LlmService {
     this.gemini = new GeminiAdapter();
     this.claude = new ClaudeAdapter();
     this.opencode = new OpencodeAdapter();
+    this.deepseek = new DeepseekAdapter();
     this.mockGemini = new MockAiAdapter('gemini');
     this.mockClaude = new MockAiAdapter('claude');
     this.mockOpencode = new MockAiAdapter('opencode');
+    this.mockDeepseek = new MockAiAdapter('deepseek');
     this.mock = this.mockGemini; // Compatibilidade com código existente
     this.defaultProvider = process.env.DEFAULT_AI_PROVIDER || 'gemini';
 
@@ -19,6 +22,7 @@ class LlmService {
       gemini: new CircuitBreaker('gemini'),
       claude: new CircuitBreaker('claude'),
       opencode: new CircuitBreaker('opencode'),
+      deepseek: new CircuitBreaker('deepseek'),
     };
   }
 
@@ -41,7 +45,16 @@ class LlmService {
       return 'claude';
     }
     if (provider === 'claude') {
+      if (this.deepseek.isAvailable()) return 'deepseek';
       return this.opencode.isAvailable() ? 'opencode' : 'gemini';
+    }
+    if (provider === 'opencode') {
+      if (this.deepseek.isAvailable()) return 'deepseek';
+      return this.gemini.isAvailable() ? 'gemini' : 'claude';
+    }
+    if (provider === 'deepseek') {
+      if (this.opencode.isAvailable()) return 'opencode';
+      return this.gemini.isAvailable() ? 'gemini' : 'claude';
     }
     return this.gemini.isAvailable() ? 'gemini' : 'claude';
   }
@@ -55,10 +68,12 @@ class LlmService {
     if (process.env.NODE_ENV === 'test' || process.env.USE_MOCK_AI === 'true') {
       if (provider === 'claude') return this.mockClaude;
       if (provider === 'opencode') return this.mockOpencode;
+      if (provider === 'deepseek') return this.mockDeepseek;
       return this.mockGemini;
     }
     if (provider === 'claude') return this.claude;
     if (provider === 'opencode') return this.opencode;
+    if (provider === 'deepseek') return this.deepseek;
     return this.gemini;
   }
 
@@ -102,12 +117,13 @@ class LlmService {
     }
 
     // Se nenhum dos dois estiver disponível, tenta qualquer um que tenha chave
+    if (this.deepseek.isAvailable()) return this.deepseek;
     if (this.opencode.isAvailable()) return this.opencode;
     if (this.gemini.isAvailable()) return this.gemini;
     if (this.claude.isAvailable()) return this.claude;
 
     // Se nenhuma chave estiver configurada em desenvolvimento, usa o mock seguro
-    console.warn('⚠️ [LLM Service] Nenhuma chave de API de IA configurada (OPENCODE_API_KEY, GEMINI_API_KEY ou ANTHROPIC_API_KEY). Usando MockAiAdapter.');
+    console.warn('⚠️ [LLM Service] Nenhuma chave de API de IA configurada (DEEPSEEK_API_KEY, OPENCODE_API_KEY, GEMINI_API_KEY ou ANTHROPIC_API_KEY). Usando MockAiAdapter.');
     return this.mock;
   }
 

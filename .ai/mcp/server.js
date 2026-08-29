@@ -63,7 +63,7 @@ server.registerTool(
             {
               service: 'genai-service',
               port: 4004,
-              providers: ['gemini', 'claude'],
+              providers: ['gemini', 'claude', 'opencode', 'deepseek'],
               defaultProvider: process.env.DEFAULT_AI_PROVIDER || 'gemini',
               cefrLevels: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'],
               tierLimits: {
