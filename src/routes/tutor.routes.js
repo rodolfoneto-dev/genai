@@ -19,7 +19,7 @@ const ChatInputSchema = z.object({
 
 /**
  * POST /genai/tutor/chat
- * Conversa interativa com o tutor Fox.
+ * Conversa interativa com o tutor UP!.
  * Acessível por: Aluno e Professor.
  */
 router.post('/chat', apiRateLimiter, authenticate, checkRole('aluno', 'professor'), checkAiQuota(300), async (req, res, next) => {
@@ -103,7 +103,7 @@ router.post('/chat', apiRateLimiter, authenticate, checkRole('aluno', 'professor
 
 /**
  * POST /genai/tutor/chat/stream
- * Conversa interativa com o tutor Fox com resposta progressiva via Server-Sent Events (SSE).
+ * Conversa interativa com o tutor UP! com resposta progressiva via Server-Sent Events (SSE).
  * Acessível por: Aluno e Professor.
  */
 router.post('/chat/stream', apiRateLimiter, authenticate, checkRole('aluno', 'professor'), checkAiQuota(300), async (req, res, next) => {

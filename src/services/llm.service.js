@@ -1,5 +1,6 @@
 const GeminiAdapter = require('./adapters/gemini.adapter');
 const ClaudeAdapter = require('./adapters/claude.adapter');
+const OpencodeAdapter = require('./adapters/opencode.adapter');
 const MockAiAdapter = require('./adapters/mock.adapter');
 const { CircuitBreaker, executeWithRetry } = require('./resilience');
 
@@ -7,14 +8,17 @@ class LlmService {
   constructor() {
     this.gemini = new GeminiAdapter();
     this.claude = new ClaudeAdapter();
+    this.opencode = new OpencodeAdapter();
     this.mockGemini = new MockAiAdapter('gemini');
     this.mockClaude = new MockAiAdapter('claude');
+    this.mockOpencode = new MockAiAdapter('opencode');
     this.mock = this.mockGemini; // Compatibilidade com código existente
     this.defaultProvider = process.env.DEFAULT_AI_PROVIDER || 'gemini';
 
     this.circuitBreakers = {
       gemini: new CircuitBreaker('gemini'),
       claude: new CircuitBreaker('claude'),
+      opencode: new CircuitBreaker('opencode'),
     };
   }
 
@@ -33,7 +37,13 @@ class LlmService {
    * @returns {string}
    */
   getFallbackProviderName(provider) {
-    return provider === 'gemini' ? 'claude' : 'gemini';
+    if (provider === 'gemini') {
+      return 'claude';
+    }
+    if (provider === 'claude') {
+      return this.opencode.isAvailable() ? 'opencode' : 'gemini';
+    }
+    return this.gemini.isAvailable() ? 'gemini' : 'claude';
   }
 
   /**
@@ -43,9 +53,13 @@ class LlmService {
    */
   getAdapterByName(provider) {
     if (process.env.NODE_ENV === 'test' || process.env.USE_MOCK_AI === 'true') {
-      return provider === 'claude' ? this.mockClaude : this.mockGemini;
+      if (provider === 'claude') return this.mockClaude;
+      if (provider === 'opencode') return this.mockOpencode;
+      return this.mockGemini;
     }
-    return provider === 'claude' ? this.claude : this.gemini;
+    if (provider === 'claude') return this.claude;
+    if (provider === 'opencode') return this.opencode;
+    return this.gemini;
   }
 
   /**
@@ -82,13 +96,18 @@ class LlmService {
       return primaryAdapter;
     }
 
-    // Fallback: se o preferido não tiver chave, tenta o outro
+    // Fallback: se o preferido não tiver chave, tenta o secundário
     if (fallbackAdapter.isAvailable()) {
       return fallbackAdapter;
     }
 
+    // Se nenhum dos dois estiver disponível, tenta qualquer um que tenha chave
+    if (this.opencode.isAvailable()) return this.opencode;
+    if (this.gemini.isAvailable()) return this.gemini;
+    if (this.claude.isAvailable()) return this.claude;
+
     // Se nenhuma chave estiver configurada em desenvolvimento, usa o mock seguro
-    console.warn('⚠️ [LLM Service] Nenhuma chave de API de IA configurada (GEMINI_API_KEY ou ANTHROPIC_API_KEY). Usando MockAiAdapter.');
+    console.warn('⚠️ [LLM Service] Nenhuma chave de API de IA configurada (OPENCODE_API_KEY, GEMINI_API_KEY ou ANTHROPIC_API_KEY). Usando MockAiAdapter.');
     return this.mock;
   }
 

@@ -5,20 +5,22 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: englishfox-genai-local
+    container_name: upexperience-genai-local
     restart: unless-stopped
     ports:
       - "4004:4004"
     environment:
       - PORT=4004
       - NODE_ENV=development
-      - MONGODB_URI=mongodb://mongo-genai:27017/englishfox_genai
+      - MONGODB_URI=mongodb://mongo-genai:27017/upexperience_genai
       - JWT_SECRET=supersecret_staging_jwt_key_please_change
       - DEFAULT_AI_PROVIDER=gemini
       - USE_MOCK_AI=${USE_MOCK_AI:-true}
       - TUTOR_MAX_CONTEXT_MESSAGES=${TUTOR_MAX_CONTEXT_MESSAGES:-6}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENCODE_API_KEY=${OPENCODE_API_KEY:-}
+      - OPENCODE_MODEL=${OPENCODE_MODEL:-big-pickle}
       - REDIS_URL=${REDIS_URL:-redis://redis-genai:6379}
     depends_on:
       - mongo-genai
@@ -28,7 +30,7 @@ services:
 
   mongo-genai:
     image: mongo:7.0
-    container_name: englishfox-mongo-genai-local
+    container_name: upexperience-mongo-genai-local
     restart: unless-stopped
     ports:
       - "27018:27017"
@@ -39,7 +41,7 @@ services:
 
   redis-genai:
     image: redis:7.2-alpine
-    container_name: englishfox-redis-genai-local
+    container_name: upexperience-redis-genai-local
     restart: unless-stopped
     ports:
       - "6380:6379"

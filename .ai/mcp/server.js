@@ -27,7 +27,7 @@ server.registerResource(
     contents: [
       {
         uri: uri.href,
-        text: `# 🧠 English Fox GenAI Service Contract
+        text: `# 🧠 UP!Experience GenAI Service Contract
 - **Porta**: 4004 (REST)
 - **Provedores de IA**: Gemini 2.5 Flash / Claude 3.5 Haiku
 - **Rotas**:

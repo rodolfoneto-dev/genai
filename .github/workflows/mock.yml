@@ -96,7 +96,7 @@ jobs:
             md += `| ❌ **Falhas** | **${failedTests}** |\n\n`;
 
             md += `### 🛡️ Destaques de Arquitetura & FinOps Testados\n\n`;
-            md += `- 🧑‍🏫 **Agente Tutor Fox**: Diálogo interativo CEFR com corte de histórico em janela deslizante (6 mensagens).\n`;
+            md += `- 🧑‍🏫 **Agente Tutor UP!**: Diálogo interativo CEFR com corte de histórico em janela deslizante (20 mensagens).\n`;
             md += `- ✍️ **Correção Estruturada de Redações**: Avaliação com JSON Mode, notas, apontamento gramatical e revisão.\n`;
             md += `- 📚 **Geração de Exercícios**: Restrito na v1 a \`professor\`/\`admin\` e protegido por Cache Semântico ($0).\n`;
             md += `- 🛡️ **Governança de Quotas**: Rate limit 20 req/min e bloqueio atômico de alunos com quota de tokens esgotada.\n`;

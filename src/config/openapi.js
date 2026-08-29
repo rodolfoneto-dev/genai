@@ -174,7 +174,7 @@ const openApiSpec = {
           { name: 'startDate', in: 'query', schema: { type: 'string', format: 'date' }, description: 'Data inicial (YYYY-MM-DD)' },
           { name: 'endDate', in: 'query', schema: { type: 'string', format: 'date' }, description: 'Data final (YYYY-MM-DD)' },
           { name: 'feature', in: 'query', schema: { type: 'string', enum: ['tutor', 'correction', 'exercise_generation'] } },
-          { name: 'provider', in: 'query', schema: { type: 'string', enum: ['gemini', 'claude'] } },
+          { name: 'provider', in: 'query', schema: { type: 'string', enum: ['gemini', 'claude', 'opencode'] } },
         ],
         responses: {
           '200': { description: 'Relatório consolidado de custos e métricas por provedor e feature' },
