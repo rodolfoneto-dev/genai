@@ -6,6 +6,7 @@ const llmService = require('../services/llm.service');
 const { getEssayCorrectionPrompt } = require('../services/prompt-templates');
 const AiUsageLog = require('../models/AiUsageLog');
 const UserQuota = require('../models/UserQuota');
+const usageEventBus = require('../services/usage-event-bus');
 
 const router = express.Router();
 
@@ -54,23 +55,19 @@ router.post('/essay', apiRateLimiter, authenticate, checkRole('aluno', 'professo
       revisedText: text,
     };
 
-    // 2. Registra uso e debita quota
-    try {
-      await Promise.all([
-        AiUsageLog.logUsage({
-          userId,
-          role: req.user.role,
-          feature: 'correction',
-          provider: aiResponse.provider,
-          model: aiResponse.model,
-          promptTokens: aiResponse.usage?.promptTokens || 0,
-          completionTokens: aiResponse.usage?.completionTokens || 0,
-          durationMs: aiResponse.durationMs || 0,
-          cefrLevel,
-        }),
-        UserQuota.consumeTokens(userId, aiResponse.usage?.totalTokens || 0),
-      ]);
-    } catch {}
+    // 2. Registra uso e debita quota de forma assíncrona
+    usageEventBus.dispatch({
+      userId,
+      role: req.user.role,
+      feature: 'correction',
+      provider: aiResponse.provider,
+      model: aiResponse.model,
+      promptTokens: aiResponse.usage?.promptTokens || 0,
+      completionTokens: aiResponse.usage?.completionTokens || 0,
+      totalTokens: aiResponse.usage?.totalTokens || 0,
+      durationMs: aiResponse.durationMs || 0,
+      cefrLevel,
+    });
 
     return res.status(200).json({
       correction: correctionData,

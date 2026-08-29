@@ -58,6 +58,45 @@ const openApiSpec = {
         },
       },
     },
+    '/genai/tutor/chat/stream': {
+      post: {
+        tags: ['Tutor'],
+        summary: 'Conversar com o Tutor Virtual via Server-Sent Events (Streaming)',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['message'],
+                properties: {
+                  message: { type: 'string', example: 'Can you explain present continuous?' },
+                  cefrLevel: { type: 'string', enum: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], default: 'B1' },
+                  topic: { type: 'string', example: 'Grammar practice' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Stream SSE de eventos (start, chunk, done, keepalive)',
+            content: {
+              'text/event-stream': {
+                schema: {
+                  type: 'string',
+                  example: 'event: start\ndata: {"sessionId":"..."}\n\nevent: chunk\ndata: {"text":"Hello"}\n\nevent: done\ndata: {"usage":{...}}\n\n',
+                },
+              },
+            },
+          },
+          '400': { description: 'Mensagem inválida ou vazia' },
+          '401': { description: 'Token ausente ou expirado' },
+          '429': { description: 'Quota diária de tokens excedida' },
+        },
+      },
+    },
     '/genai/correction/essay': {
       post: {
         tags: ['Correção'],
@@ -131,8 +170,14 @@ const openApiSpec = {
         summary: 'Relatório Executivo de Custos FinOps',
         security: [{ bearerAuth: [] }],
         description: 'Acessível estritamente por Administradores.',
+        parameters: [
+          { name: 'startDate', in: 'query', schema: { type: 'string', format: 'date' }, description: 'Data inicial (YYYY-MM-DD)' },
+          { name: 'endDate', in: 'query', schema: { type: 'string', format: 'date' }, description: 'Data final (YYYY-MM-DD)' },
+          { name: 'feature', in: 'query', schema: { type: 'string', enum: ['tutor', 'correction', 'exercise_generation'] } },
+          { name: 'provider', in: 'query', schema: { type: 'string', enum: ['gemini', 'claude'] } },
+        ],
         responses: {
-          '200': { description: 'Relatório consolidado de custos' },
+          '200': { description: 'Relatório consolidado de custos e métricas por provedor e feature' },
           '403': { description: 'Acesso negado' },
         },
       },

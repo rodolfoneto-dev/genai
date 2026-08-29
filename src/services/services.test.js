@@ -71,5 +71,80 @@ describe('GenAI Service - LLM Engine & Prompt Templates Unit Tests', () => {
       expect(res.parsedJson.exercises.length).toBe(3);
       expect(res.parsedJson.exercises[0].correctAnswer).toBe('went');
     });
+
+    it('deve realizar streaming de tokens via generateStream com TTFT e chunks normalizados', async () => {
+      const chunks = [];
+      let finalChunk = null;
+
+      for await (const chunk of llmService.generateStream({
+        systemPrompt: getTutorPrompt('B1', 'Travel'),
+        messages: [{ role: 'user', content: 'Tell me about London' }],
+      })) {
+        if (!chunk.isDone) {
+          chunks.push(chunk);
+        } else {
+          finalChunk = chunk;
+        }
+      }
+
+      expect(chunks.length).toBeGreaterThan(0);
+      expect(chunks[0].text).toBeDefined();
+      expect(finalChunk).toBeDefined();
+      expect(finalChunk.isDone).toBe(true);
+      expect(finalChunk.usage.totalTokens).toBeGreaterThan(0);
+      expect(finalChunk.ttftMs).toBeGreaterThanOrEqual(0);
+    });
+
+    it('deve abortar geração em stream quando signal for disparado', async () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      await expect(async () => {
+        for await (const _ of llmService.generateStream({
+          systemPrompt: getTutorPrompt('B1', 'Travel'),
+          messages: [{ role: 'user', content: 'Test abort' }],
+          signal: controller.signal,
+        })) {}
+      }).rejects.toThrow('Generation aborted by client');
+    });
+  });
+
+  describe('Story 3.2: Distributed ExerciseCacheService', () => {
+    const exerciseCache = require('./exercise-cache.service');
+
+    beforeEach(async () => {
+      await exerciseCache.clear();
+    });
+
+    it('deve gerar chave formatada com prefixo genai:exercise:', () => {
+      const key = exerciseCache.generateKey('Simple Past', 'A2', 5, 'multiple_choice');
+      expect(key).toBe('genai:exercise:simple-past:A2:5:multiple_choice');
+    });
+
+    it('deve gravar e recuperar do cache reduzindo latência e custo a zero', async () => {
+      const mockPayload = {
+        topic: 'Travel',
+        cefrLevel: 'B1',
+        totalGenerated: 2,
+        exercises: [{ id: 1, question: 'Where did you go?' }],
+      };
+
+      await exerciseCache.set('Travel', 'B1', 2, 'multiple_choice', mockPayload);
+
+      const cached = await exerciseCache.get('Travel', 'B1', 2, 'multiple_choice');
+      expect(cached).toEqual(mockPayload);
+
+      // Miss em tópico não cacheado
+      const miss = await exerciseCache.get('Cooking', 'B1', 2, 'multiple_choice');
+      expect(miss).toBeNull();
+    });
+
+    it('clear() deve invalidar todos os itens armazenados', async () => {
+      await exerciseCache.set('Grammar', 'B2', 3, 'fill_in_the_blank', { test: true });
+      await exerciseCache.clear();
+
+      const cached = await exerciseCache.get('Grammar', 'B2', 3, 'fill_in_the_blank');
+      expect(cached).toBeNull();
+    });
   });
 });

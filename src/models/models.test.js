@@ -93,6 +93,43 @@ describe('GenAI Service - Mongoose Models Unit Tests', () => {
       expect(quota.dailyTokensUsed).toBe(0);
       expect(quota.monthlyTokensUsed).toBe(15000);
     });
+
+    it('consumeTokensAtomic deve permitir consumo dentro do limite e atualizar saldo', async () => {
+      const quota = new UserQuota({
+        userId: 'user_atomic_1',
+        dailyTokenLimit: 1000,
+        dailyTokensUsed: 200,
+        monthlyTokenLimit: 10000,
+        monthlyTokensUsed: 200,
+      });
+
+      jest.spyOn(UserQuota, 'getOrCreateQuota').mockResolvedValueOnce(quota);
+
+      const result = await UserQuota.consumeTokensAtomic('user_atomic_1', 300, 'aluno');
+      expect(result.allowed).toBe(true);
+      expect(quota.dailyTokensUsed).toBe(500);
+    });
+
+    it('consumeTokensAtomic deve bloquear quando o consumo ultrapassar o limite diário', async () => {
+      const quota = new UserQuota({
+        userId: 'user_atomic_2',
+        dailyTokenLimit: 1000,
+        dailyTokensUsed: 900,
+        monthlyTokenLimit: 10000,
+        monthlyTokensUsed: 900,
+      });
+
+      jest.spyOn(UserQuota, 'getOrCreateQuota').mockResolvedValueOnce(quota);
+
+      const result = await UserQuota.consumeTokensAtomic('user_atomic_2', 200, 'aluno');
+      expect(result.allowed).toBe(false);
+      expect(result.dailyRemaining).toBe(100);
+    });
+
+    it('consumeTokensAtomic deve conceder bypass automático para perfil admin', async () => {
+      const result = await UserQuota.consumeTokensAtomic('admin_user', 999999, 'admin');
+      expect(result.allowed).toBe(true);
+    });
   });
 
   describe('TutorSession Model', () => {
@@ -141,6 +178,25 @@ describe('GenAI Service - Mongoose Models Unit Tests', () => {
 
       expect(session.maxContextMessages).toBe(8);
       delete process.env.TUTOR_MAX_CONTEXT_MESSAGES;
+    });
+
+    it('deve limitar o teto máximo de mensagens a 20 mesmo que configurado maior', () => {
+      process.env.TUTOR_MAX_CONTEXT_MESSAGES = '50';
+      const session = new TutorSession({
+        userId: 'student_cap_test',
+      });
+
+      expect(session.maxContextMessages).toBe(20);
+      delete process.env.TUTOR_MAX_CONTEXT_MESSAGES;
+
+      // Adiciona 25 mensagens
+      for (let i = 1; i <= 25; i++) {
+        session.appendMessage('user', `Message ${i}`);
+      }
+
+      expect(session.messages.length).toBe(20);
+      expect(session.messages[0].content).toBe('Message 6');
+      expect(session.messages[19].content).toBe('Message 25');
     });
   });
 });

@@ -73,6 +73,78 @@ class ClaudeAdapter extends BaseAiAdapter {
       durationMs,
     };
   }
+
+  async *generateStream({ systemPrompt, messages = [], maxTokens = 500, temperature = 0.7, jsonMode = false, model, signal = null }) {
+    if (!this.isAvailable()) {
+      throw new Error('ANTHROPIC_API_KEY não configurada no ambiente.');
+    }
+
+    const modelName = model || this.defaultModel;
+    const formattedMessages = messages.map((m) => ({
+      role: m.role === 'assistant' ? 'assistant' : 'user',
+      content: m.content,
+    }));
+
+    let effectiveSystem = systemPrompt || '';
+    if (jsonMode && !effectiveSystem.includes('JSON')) {
+      effectiveSystem += '\n\nIMPORTANT: Respond ONLY with a valid raw JSON object, without markdown code fences or conversational greetings.';
+    }
+
+    const startTime = performance.now();
+    let ttftMs = null;
+
+    const requestOptions = signal ? { signal } : {};
+    const stream = this.client.messages.stream({
+      model: modelName,
+      max_tokens: maxTokens,
+      temperature,
+      system: effectiveSystem,
+      messages: formattedMessages,
+    }, requestOptions);
+
+    for await (const text of stream.textStream) {
+      if (signal?.aborted) {
+        try { stream.abort(); } catch {}
+        const abortErr = new Error('Generation aborted by client');
+        abortErr.name = 'AbortError';
+        throw abortErr;
+      }
+
+      if (text) {
+        if (ttftMs === null) {
+          ttftMs = Math.round(performance.now() - startTime);
+        }
+        yield {
+          text,
+          isDone: false,
+        };
+      }
+    }
+
+    const durationMs = Math.round(performance.now() - startTime);
+    let finalMessage = null;
+    try {
+      finalMessage = await stream.finalMessage();
+    } catch {}
+
+    const promptTokens = finalMessage?.usage?.input_tokens || 0;
+    const completionTokens = finalMessage?.usage?.output_tokens || 0;
+    const totalTokens = promptTokens + completionTokens;
+
+    yield {
+      text: '',
+      isDone: true,
+      provider: 'claude',
+      model: modelName,
+      usage: {
+        promptTokens,
+        completionTokens,
+        totalTokens,
+      },
+      durationMs,
+      ttftMs: ttftMs || durationMs,
+    };
+  }
 }
 
 module.exports = ClaudeAdapter;

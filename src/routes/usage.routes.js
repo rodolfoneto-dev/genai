@@ -64,15 +64,16 @@ router.get('/my-quota', authenticate, checkRole('aluno', 'professor', 'admin'), 
  */
 router.get('/analytics', authenticate, checkRole('admin'), async (req, res, next) => {
   try {
-    const { startDate, endDate } = req.query;
+    const { startDate, endDate, feature, provider } = req.query;
 
     let analytics = null;
     try {
-      analytics = await AiUsageLog.getFinOpsAnalytics({ startDate, endDate });
+      analytics = await AiUsageLog.getFinOpsAnalytics({ startDate, endDate, feature, provider });
     } catch {
       analytics = {
-        overview: { totalRequests: 0, totalTokens: 0, totalCostUsd: 0, avgDurationMs: 0 },
+        overview: { totalRequests: 0, totalTokens: 0, totalCostUsd: 0, avgDurationMs: 0, avgTtftMs: 0 },
         byFeature: [],
+        byProvider: [],
         topConsumers: [],
       };
     }
@@ -80,7 +81,12 @@ router.get('/analytics', authenticate, checkRole('admin'), async (req, res, next
     return res.status(200).json({
       finOpsReport: 'UP!Experience GenAI Service - Cost & Usage Analytics',
       generatedAt: new Date().toISOString(),
-      filters: { startDate: startDate || null, endDate: endDate || null },
+      filters: {
+        startDate: startDate || null,
+        endDate: endDate || null,
+        feature: feature || null,
+        provider: provider || null,
+      },
       ...analytics,
     });
   } catch (err) {

@@ -1,3 +1,4 @@
+# agy --conversation=c8d8df39-114e-4b01-b94a-de8edfe9a2dc
 # 🧠 English Fox — GenAI Microservice (`genai`)
 
 Microsserviço de Inteligência Artificial Generativa pedagógica da plataforma English Fox. Centraliza o tutor interativo, correção de redações, geração sob demanda de exercícios e governança de custos (FinOps).

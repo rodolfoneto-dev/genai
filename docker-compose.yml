@@ -19,8 +19,10 @@ services:
       - TUTOR_MAX_CONTEXT_MESSAGES=${TUTOR_MAX_CONTEXT_MESSAGES:-6}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - REDIS_URL=${REDIS_URL:-redis://redis-genai:6379}
     depends_on:
       - mongo-genai
+      - redis-genai
     networks:
       - genai-network
 
@@ -35,9 +37,21 @@ services:
     networks:
       - genai-network
 
+  redis-genai:
+    image: redis:7.2-alpine
+    container_name: englishfox-redis-genai-local
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - genai-redis-data:/data
+    networks:
+      - genai-network
+
 networks:
   genai-network:
     driver: bridge
 
 volumes:
   genai-mongo-data:
+  genai-redis-data:

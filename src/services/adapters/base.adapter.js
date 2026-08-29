@@ -20,6 +20,21 @@ class BaseAiAdapter {
   async generate(params) {
     throw new Error(`O método generate() deve ser implementado pelo adaptador ${this.name}`);
   }
+
+  /**
+   * Executa a chamada à LLM em modo streaming e retorna async generator com chunks normalizados.
+   * @param {Object} params
+   * @param {string} params.systemPrompt
+   * @param {Array<{role: string, content: string}>} params.messages
+   * @param {number} params.maxTokens
+   * @param {number} params.temperature
+   * @param {string} [params.model]
+   * @param {AbortSignal} [params.signal]
+   * @returns {AsyncGenerator<{ text: string, isDone: boolean, usage?: object, durationMs?: number, ttftMs?: number }>}
+   */
+  async *generateStream(params) {
+    throw new Error(`O método generateStream() deve ser implementado pelo adaptador ${this.name}`);
+  }
 }
 
 module.exports = BaseAiAdapter;

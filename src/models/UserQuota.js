@@ -165,4 +165,65 @@ UserQuotaSchema.statics.consumeTokens = async function (userId, totalTokens = 0)
   );
 };
 
+/**
+ * Valida e debita tokens de forma atômica protegendo contra race conditions em concorrência
+ */
+UserQuotaSchema.statics.consumeTokensAtomic = async function (userId, tokens = 0, role = 'aluno') {
+  if (!userId || tokens <= 0) {
+    return { allowed: true };
+  }
+
+  if (role === 'admin') {
+    return { allowed: true };
+  }
+
+  const currentQuota = await this.getOrCreateQuota(userId, role);
+
+  if (mongoose.connection.readyState !== 1) {
+    const check = currentQuota.hasAvailableQuota(tokens);
+    if (!check.allowed) {
+      return { allowed: false, ...check };
+    }
+    currentQuota.dailyTokensUsed += tokens;
+    currentQuota.monthlyTokensUsed += tokens;
+    return { allowed: true, quota: currentQuota };
+  }
+
+  const updated = await this.findOneAndUpdate(
+    {
+      userId,
+      $expr: {
+        $and: [
+          { $lte: [{ $add: ['$dailyTokensUsed', tokens] }, '$dailyTokenLimit'] },
+          { $lte: [{ $add: ['$monthlyTokensUsed', tokens] }, '$monthlyTokenLimit'] },
+        ],
+      },
+    },
+    {
+      $inc: {
+        dailyTokensUsed: tokens,
+        monthlyTokensUsed: tokens,
+      },
+    },
+    { new: true }
+  );
+
+  if (!updated) {
+    const quota = await this.findOne({ userId });
+    return {
+      allowed: false,
+      dailyLimit: quota?.dailyTokenLimit || currentQuota.dailyTokenLimit,
+      dailyTokensUsed: quota?.dailyTokensUsed || currentQuota.dailyTokensUsed,
+      dailyRemaining: Math.max(0, (quota?.dailyTokenLimit || currentQuota.dailyTokenLimit) - (quota?.dailyTokensUsed || currentQuota.dailyTokensUsed)),
+      resetInfo: 'Seu saldo será automaticamente renovado à meia-noite (UTC).',
+    };
+  }
+
+  return {
+    allowed: true,
+    quota: updated,
+    dailyRemaining: Math.max(0, updated.dailyTokenLimit - updated.dailyTokensUsed),
+  };
+};
+
 module.exports = mongoose.model('UserQuota', UserQuotaSchema);

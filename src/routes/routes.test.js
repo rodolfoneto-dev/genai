@@ -63,6 +63,46 @@ describe('GenAI Service - Domain Routes Integration Tests', () => {
     });
   });
 
+  describe('POST /genai/tutor/chat/stream (SSE)', () => {
+    it('deve retornar 401 se não estiver autenticado', async () => {
+      const res = await request(app).post('/genai/tutor/chat/stream').send({ message: 'Hello' });
+      expect(res.status).toBe(401);
+      expect(res.body.error.code).toBe('UNAUTHORIZED');
+    });
+
+    it('deve retornar 400 se a mensagem for inválida', async () => {
+      const res = await request(app)
+        .post('/genai/tutor/chat/stream')
+        .set('Authorization', `Bearer ${studentToken}`)
+        .send({ message: '' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('deve transmitir resposta via Server-Sent Events com eventos start, chunk e done (200)', async () => {
+      const res = await request(app)
+        .post('/genai/tutor/chat/stream')
+        .set('Authorization', `Bearer ${studentToken}`)
+        .send({
+          message: 'Can you explain the difference between for and since?',
+          cefrLevel: 'B1',
+          topic: 'Grammar explanations',
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.headers['content-type']).toContain('text/event-stream');
+      expect(res.headers['cache-control']).toContain('no-cache');
+
+      // Verifica eventos emitidos no corpo do SSE
+      expect(res.text).toContain('event: start');
+      expect(res.text).toContain('event: chunk');
+      expect(res.text).toContain('event: done');
+      expect(res.text).toContain('sessionId');
+      expect(res.text).toContain('usage');
+    });
+  });
+
   describe('POST /genai/correction/essay', () => {
     it('deve retornar 400 se o texto for curto demais (< 10 caracteres)', async () => {
       const res = await request(app)

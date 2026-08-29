@@ -24,7 +24,7 @@ const TutorMessageSchema = new mongoose.Schema({
 
 const getDefaultContextWindow = () => {
   const envVal = Number(process.env.TUTOR_MAX_CONTEXT_MESSAGES);
-  return !isNaN(envVal) && envVal >= 2 ? envVal : 6;
+  return !isNaN(envVal) && envVal >= 2 ? Math.min(envVal, 20) : 6;
 };
 
 const TutorSessionSchema = new mongoose.Schema(
@@ -52,7 +52,7 @@ const TutorSessionSchema = new mongoose.Schema(
       type: Number,
       default: getDefaultContextWindow,
       min: 2,
-      max: 30,
+      max: 20,
     },
     active: {
       type: Boolean,
@@ -67,7 +67,7 @@ const TutorSessionSchema = new mongoose.Schema(
 TutorSessionSchema.index({ userId: 1, active: 1 });
 
 /**
- * Adiciona mensagem à sessão e aplica a janela deslizante de contexto
+ * Adiciona mensagem à sessão e aplica a janela deslizante de contexto delimitada (máx 20)
  */
 TutorSessionSchema.methods.appendMessage = function (role, content, feedback = null) {
   this.messages.push({
@@ -77,7 +77,7 @@ TutorSessionSchema.methods.appendMessage = function (role, content, feedback = n
     timestamp: new Date(),
   });
 
-  const limit = this.maxContextMessages || getDefaultContextWindow();
+  const limit = Math.min(this.maxContextMessages || getDefaultContextWindow(), 20);
   // Mantém apenas as últimas N mensagens configuradas na janela deslizante
   if (this.messages.length > limit) {
     this.messages = this.messages.slice(-limit);
@@ -87,13 +87,45 @@ TutorSessionSchema.methods.appendMessage = function (role, content, feedback = n
 };
 
 /**
- * Retorna o histórico formatado para o payload de mensagens da LLM
+ * Retorna o histórico formatado para o payload de mensagens da LLM respeitando o teto configurado
  */
 TutorSessionSchema.methods.getSanitizedHistory = function () {
-  return this.messages.map((m) => ({
+  const limit = Math.min(this.maxContextMessages || getDefaultContextWindow(), 20);
+  const activeSlice = this.messages.slice(-limit);
+  return activeSlice.map((m) => ({
     role: m.role,
     content: m.content,
   }));
+};
+
+/**
+ * Helper atômico para adicionar mensagens com delimitador $slice diretamente no MongoDB
+ */
+TutorSessionSchema.statics.boundedAppend = async function (sessionId, newMessages = [], limit = 20) {
+  const safeLimit = Math.min(limit, 20);
+  const formatted = newMessages.map((m) => ({
+    role: m.role,
+    content: m.content,
+    feedback: m.feedback || null,
+    timestamp: new Date(),
+  }));
+
+  if (mongoose.connection.readyState !== 1) {
+    return null;
+  }
+
+  return await this.findByIdAndUpdate(
+    sessionId,
+    {
+      $push: {
+        messages: {
+          $each: formatted,
+          $slice: -safeLimit,
+        },
+      },
+    },
+    { new: true }
+  );
 };
 
 /**
