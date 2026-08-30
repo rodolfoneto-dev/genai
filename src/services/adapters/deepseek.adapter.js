@@ -114,6 +114,10 @@ class DeepseekAdapter extends BaseAiAdapter {
     const completionTokens = data.usage?.completion_tokens || 0;
     const totalTokens = data.usage?.total_tokens || (promptTokens + completionTokens);
 
+    if (!content.trim()) {
+      throw new Error(`DeepSeek não gerou texto de resposta (finish_reason: ${data.choices?.[0]?.finish_reason || 'unknown'}). O limite de tokens pode ter sido consumido pelo raciocínio.`);
+    }
+
     let parsedJson = null;
     if (jsonMode) {
       try {

@@ -56,7 +56,7 @@ router.post('/chat', apiRateLimiter, authenticate, checkRole('aluno', 'professor
     const aiResponse = await llmService.generate({
       systemPrompt,
       messages: history,
-      maxTokens: 300, // Limite estrito FinOps
+      maxTokens: Number(process.env.TUTOR_MAX_TOKENS) || 800, // Limite FinOps adaptado para modelos com raciocínio
       temperature: 0.7,
     });
 
@@ -176,7 +176,7 @@ router.post('/chat/stream', apiRateLimiter, authenticate, checkRole('aluno', 'pr
     for await (const chunk of llmService.generateStream({
       systemPrompt,
       messages: history,
-      maxTokens: 300,
+      maxTokens: Number(process.env.TUTOR_MAX_TOKENS) || 800,
       temperature: 0.7,
       signal: abortController.signal,
     })) {
