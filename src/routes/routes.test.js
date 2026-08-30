@@ -89,6 +89,29 @@ describe('GenAI Service - Domain Routes Integration Tests', () => {
     });
   });
 
+  describe('POST /genai/tutor/reset', () => {
+    it('deve reiniciar o histórico da sessão para o tópico selecionado (200)', async () => {
+      const res = await request(app)
+        .post('/genai/tutor/reset')
+        .set('Authorization', `Bearer ${studentToken}`)
+        .send({ topic: 'Airport & Travel' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.topic).toBe('Airport & Travel');
+    });
+
+    it('deve reiniciar via DELETE /genai/tutor/history (200)', async () => {
+      const res = await request(app)
+        .delete('/genai/tutor/history')
+        .query({ topic: 'Airport & Travel' })
+        .set('Authorization', `Bearer ${studentToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+    });
+  });
+
   describe('POST /genai/tutor/chat/stream (SSE)', () => {
     it('deve retornar 401 se não estiver autenticado', async () => {
       const res = await request(app).post('/genai/tutor/chat/stream').send({ message: 'Hello' });

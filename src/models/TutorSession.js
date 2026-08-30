@@ -166,4 +166,17 @@ TutorSessionSchema.statics.getActiveSession = async function (userId, cefrLevel 
   return session;
 };
 
+/**
+ * Helper estático para reiniciar/limpar o histórico de um tópico (desativa sessões ativas anteriores)
+ */
+TutorSessionSchema.statics.resetTopicSession = async function (userId, topic) {
+  const targetTopic = topic || 'General Daily English';
+  if (mongoose.connection.readyState !== 1) return null;
+
+  return await this.updateMany(
+    { userId, topic: targetTopic, active: true },
+    { $set: { active: false } }
+  );
+};
+
 module.exports = mongoose.model('TutorSession', TutorSessionSchema);

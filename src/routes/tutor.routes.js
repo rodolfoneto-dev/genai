@@ -48,6 +48,31 @@ router.get('/history', authenticate, checkRole('aluno', 'professor'), async (req
 });
 
 /**
+ * POST /genai/tutor/reset ou DELETE /genai/tutor/history
+ * Reinicia e limpa o histórico da sessão ativa para o tópico selecionado.
+ * Acessível por: Aluno e Professor.
+ */
+const handleResetHistory = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const topic = (req.body?.topic || req.query?.topic || 'General Daily English').trim();
+
+    await TutorSession.resetTopicSession(userId, topic);
+
+    return res.status(200).json({
+      success: true,
+      message: `Histórico do tópico "${topic}" reiniciado com sucesso.`,
+      topic,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+router.post('/reset', authenticate, checkRole('aluno', 'professor'), handleResetHistory);
+router.delete('/history', authenticate, checkRole('aluno', 'professor'), handleResetHistory);
+
+/**
  * POST /genai/tutor/chat
  * Conversa interativa com o tutor UP!.
  * Acessível por: Aluno e Professor.
