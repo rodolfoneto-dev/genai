@@ -1,0 +1,78 @@
+%% =========================================================================
+%% UP!EXPERIENCE - FLUXO DE GESTÃO DE QUOTAS & COOLDOWN (GENAI SERVICE)
+%% =========================================================================
+
+flowchart TD
+    classDef clientStyle fill:#EEF2FF,stroke:#6366F1,stroke-width:2px,color:#1E1B4B;
+    classDef rateLimitStyle fill:#FEF3C7,stroke:#F59E0B,stroke-width:2px,color:#78350F;
+    classDef authStyle fill:#E0E7FF,stroke:#4F46E5,stroke-width:2px,color:#1E1B4B;
+    classDef quotaStyle fill:#F0FDF4,stroke:#22C55E,stroke-width:2px,color:#14532D;
+    classDef adminStyle fill:#FAF5FF,stroke:#A855F7,stroke-width:2px,color:#581C87;
+    classDef llmStyle fill:#EFF6FF,stroke:#3B82F6,stroke-width:2px,color:#1E3A8A;
+    classDef blockStyle fill:#FEE2E2,stroke:#EF4444,stroke-width:2px,color:#7F1D1D;
+    classDef dbStyle fill:#F8FAFC,stroke:#64748B,stroke-width:2px,color:#0F172A;
+
+    subgraph CLIENT_LAYER["1. Camada do Cliente (Portal Web / Mobile)"]
+        U_ALUNO["👤 Aluno (Free / Basic / Premium)\nLimite: 25k ~ 250k tokens/dia"]:::clientStyle
+        U_PROF["👨‍🏫 Professor / Instrutor\nLimite: 300k tokens/dia"]:::clientStyle
+        U_ADMIN["🛡️ Administrador Master\nBypass Direto de Quota"]:::adminStyle
+    end
+
+    U_ALUNO --> REQ["🌐 Requisição GenAI\n(Tutor Chat / Writing Lab / Quizzes)"]:::clientStyle
+    U_PROF --> REQ
+    U_ADMIN --> REQ
+
+    subgraph RATE_LIMIT_LAYER["2. Camada 1: Anti-Flood & Anti-DDoS (Curto Prazo)"]
+        RL_GATEWAY["🛡️ apiRateLimiter (express-rate-limit)\nJanela deslizante de 60 segundos"]:::rateLimitStyle
+        RL_REDIS[("⚡ Redis Distribuído\nPTTL / PEXPIRE 60.000ms\n(Fallback In-Memory)")]:::dbStyle
+        RL_GATEWAY <--> RL_REDIS
+        
+        RL_CHECK{"Requisições no último minuto\n> 20 chamadas?"}:::rateLimitStyle
+        RL_BLOCK["⛔ HTTP 429: RATE_LIMIT_EXCEEDED\nCooldown Anti-Flood: 60 segundos\nHeader: Retry-After: 60s"]:::blockStyle
+    end
+
+    REQ --> RL_GATEWAY
+    RL_GATEWAY --> RL_CHECK
+    RL_CHECK -- "Sim (> 20 req/min)" --> RL_BLOCK
+    RL_CHECK -- "Não (Dentro do limite)" --> AUTH_ROUTER
+
+    subgraph AUTH_LAYER["3. Roteamento por Papel (JWT Auth)"]
+        AUTH_ROUTER{"Perfil do Usuário?"}:::authStyle
+    end
+
+    AUTH_ROUTER -- "Admin" --> ADMIN_BYPASS["⚡ Admin Bypass\nNão consome e não bloqueia cota"]:::adminStyle
+    AUTH_ROUTER -- "Aluno ou Professor" --> QUOTA_CHECK_LAYER
+
+    subgraph QUOTA_LAYER["4. Camada 2: Gestão de Quotas de Tokens (Longo Prazo)"]
+        QUOTA_INTERCEPTOR["📊 checkAiQuota Middleware\nEstimativa inicial (~300 - 500 tokens)"]:::quotaStyle
+        QUOTA_MODEL["🧠 UserQuota.getOrCreateQuota()\nMongoDB Model"]:::quotaStyle
+        
+        DATE_CHECK{"Virada de Dia UTC?\n(now.date != lastResetDate)"}:::quotaStyle
+        RESET_DAILY["🔄 COOLDOWN DIÁRIO CONCLUÍDO\n• dailyTokensUsed = 0\n• lastResetDate = now (00:00 UTC)"]:::quotaStyle
+        RESET_MONTHLY["🗓️ COOLDOWN MENSAL CONCLUÍDO\n• monthlyTokensUsed = 0 (Novo mês)"]:::quotaStyle
+        
+        EVAL_LIMIT{"dailyTokensUsed + estimado\n<= dailyTokenLimit?"}:::quotaStyle
+        
+        QUOTA_BLOCK["⛔ HTTP 429: AI_QUOTA_EXCEEDED\nLimite de IA diário atingido!\nCooldown: Reativação automática às 00:00 UTC\n(21:00 Horário de Brasília)"]:::blockStyle
+    end
+
+    QUOTA_INTERCEPTOR --> QUOTA_MODEL
+    QUOTA_MODEL --> DATE_CHECK
+    DATE_CHECK -- "Sim (Novo Dia)" --> RESET_DAILY
+    DATE_CHECK -- "Novo Mês" --> RESET_MONTHLY
+    DATE_CHECK -- "Mesmo Dia" --> EVAL_LIMIT
+    RESET_DAILY --> EVAL_LIMIT
+    RESET_MONTHLY --> EVAL_LIMIT
+
+    EVAL_LIMIT -- "Não (Saldo Esgotado)" --> QUOTA_BLOCK
+    EVAL_LIMIT -- "Sim (Possui Saldo)" --> LLM_CALL
+
+    subgraph EXECUTION_LAYER["5. Execução do Modelo & Débito Atômico"]
+        ADMIN_BYPASS --> LLM_CALL["🤖 Provedor de IA (LLM Service)\nDeepSeek / Claude / Gemini / OpenCode\nStreaming SSE ou Buffer JSON"]:::llmStyle
+        
+        LLM_CALL --> CALC_TOKENS["📐 Contagem Real de Tokens\n(Prompt + Completion Tokens)"]:::llmStyle
+        
+        CALC_TOKENS --> DEBIT_DB[("💾 Débito Atômico MongoDB\nUserQuota.consumeTokens()\n$inc: dailyTokensUsed += tokens")]:::dbStyle
+        
+        DEBIT_DB --> SUCCESS_RES["✅ Resposta Final ao Usuário\n+ Quota atualizada no Portal"]:::clientStyle
+    end

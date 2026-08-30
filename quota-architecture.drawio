@@ -1,0 +1,228 @@
+<mxfile host="app.diagrams.net" modified="2026-08-30T18:25:00.000Z" agent="Antigravity AI" version="21.0.0" type="device">
+  <diagram id="genai-quota-cooldown" name="Arquitetura de Quota e Cooldown">
+    <mxGraphModel dx="1600" dy="1100" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- HEADER BANNER -->
+        <mxCell id="header_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#08035D;strokeColor=#1E1B4B;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="30" width="1550" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="header_title" value="UP!EXPERIENCE — ARQUITETURA DE QUOTAS &amp; COOLDOWN (GENAI SERVICE)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=22;fontStyle=1;fontColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="80" y="45" width="1000" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="header_sub" value="Mapeamento Completo: Anti-Flood (60s), Validação de Saldo Diário/Mensal, Cooldown Temporal (00:00 UTC) e Políticas por Perfil (Aluno, Instrutor, Admin)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=13;fontColor=#CBD5E1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="75" width="1200" height="25" as="geometry" />
+        </mxCell>
+
+        <!-- COLUNA 1: USUÁRIOS & PERFIS -->
+        <mxCell id="group_users" value="1. REQUISIÇÃO DO CLIENTE &amp; PERFIS" style="swimlane;whiteSpace=wrap;html=1;rounded=1;fillColor=#F8FAFC;strokeColor=#CBD5E1;fontStyle=1;fontSize=13;fontColor=#0F172A;" vertex="1" parent="1">
+          <mxGeometry x="50" y="150" width="360" height="950" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="user_aluno" value="&lt;b&gt;👤 Aluno (Student)&lt;/b&gt;&lt;br/&gt;• Free: 25k tokens/dia (500k/mês)&lt;br/&gt;• Basic: 75k tokens/dia (1.5M/mês)&lt;br/&gt;• Premium: 250k tokens/dia (5M/mês)&lt;br/&gt;&lt;i&gt;Sujeito a bloqueio ao esgotar cota&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EEF2FF;strokeColor=#6366F1;fontSize=12;align=left;spacingLeft=15;" vertex="1" parent="group_users">
+          <mxGeometry x="30" y="60" width="300" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="user_prof" value="&lt;b&gt;👨‍🏫 Professor / Instrutor&lt;/b&gt;&lt;br/&gt;• Cota expandida: 300k tokens/dia&lt;br/&gt;• Mensal: 6.000.000 tokens&lt;br/&gt;• Projetado para correção de redações&lt;br/&gt;&amp; geração de simulados em massa" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0FDF4;strokeColor=#22C55E;fontSize=12;align=left;spacingLeft=15;" vertex="1" parent="group_users">
+          <mxGeometry x="30" y="180" width="300" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="user_admin" value="&lt;b&gt;🛡️ Administrador Master&lt;/b&gt;&lt;br/&gt;• Bypass total no middleware de cota&lt;br/&gt;• Nunca é bloqueado por saldo de IA&lt;br/&gt;• Limite nominal: 1.000.000 tokens/dia&lt;br/&gt;&lt;i&gt;(Apenas para auditoria de consumo)&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FAF5FF;strokeColor=#A855F7;fontSize=12;align=left;spacingLeft=15;" vertex="1" parent="group_users">
+          <mxGeometry x="30" y="300" width="300" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="req_node" value="&lt;b&gt;🌐 Chamada de API GenAI&lt;/b&gt;&lt;br/&gt;POST /genai/tutor/chat&lt;br/&gt;POST /genai/correction/evaluate&lt;br/&gt;POST /genai/exercises/generate" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#08035D;strokeColor=#1E1B4B;fontColor=#FFFFFF;fontSize=12;align=center;" vertex="1" parent="group_users">
+          <mxGeometry x="30" y="440" width="300" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend_box" value="&lt;b&gt;📌 POLÍTICAS DE COOLDOWN&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;&lt;b&gt;1. Anti-Flood (Curto Prazo):&lt;/b&gt;&lt;br/&gt;Cooldown de 60 segundos se o cliente fizer mais de 20 chamadas/min.&lt;br/&gt;&lt;br/&gt;&lt;b&gt;2. Quota Diária (Longo Prazo):&lt;/b&gt;&lt;br/&gt;Cooldown até 00:00 UTC (21:00 BRT). O saldo zera sozinho no primeiro acesso do novo dia.&lt;br/&gt;&lt;br/&gt;&lt;b&gt;3. Quota Mensal:&lt;/b&gt;&lt;br/&gt;Cooldown até o 1º dia do novo mês (00:00 UTC)." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFBEB;strokeColor=#F59E0B;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="group_users">
+          <mxGeometry x="30" y="650" width="300" height="230" as="geometry" />
+        </mxCell>
+
+        <!-- COLUNA 2: CAMADA 1 - RATE LIMITER ANTI-FLOOD (60s) -->
+        <mxCell id="group_ratelimit" value="2. CAMADA 1: RATE LIMITER ANTI-FLOOD (CURTO PRAZO)" style="swimlane;whiteSpace=wrap;html=1;rounded=1;fillColor=#F8FAFC;strokeColor=#CBD5E1;fontStyle=1;fontSize=13;fontColor=#0F172A;" vertex="1" parent="1">
+          <mxGeometry x="440" y="150" width="360" height="950" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rl_middleware" value="&lt;b&gt;🛡️ apiRateLimiter&lt;/b&gt;&lt;br/&gt;(express-rate-limit)&lt;br/&gt;Janela fixa: 60.000 ms (1 min)&lt;br/&gt;Chave: userId ou IP do cliente" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#F59E0B;fontSize=12;align=center;" vertex="1" parent="group_ratelimit">
+          <mxGeometry x="30" y="60" width="300" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="redis_node" value="&lt;b&gt;⚡ ResilientRateLimitStore&lt;/b&gt;&lt;br/&gt;Redis com PTTL / PEXPIRE 60s&lt;br/&gt;&lt;i&gt;Fallback gracioso para Map em memória&lt;br/&gt;caso o Redis caia temporariamente&lt;/i&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#F1F5F9;strokeColor=#64748B;fontSize=11;align=center;" vertex="1" parent="group_ratelimit">
+          <mxGeometry x="65" y="170" width="230" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rl_decision" value="Hits no último minuto&lt;br/&gt;&lt;b&gt;&gt; 20 chamadas?&lt;/b&gt;" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFFBEB;strokeColor=#F59E0B;fontSize=12;fontStyle=1;" vertex="1" parent="group_ratelimit">
+          <mxGeometry x="70" y="310" width="220" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rl_blocked" value="&lt;b&gt;⛔ HTTP 429 RATE_LIMIT_EXCEEDED&lt;/b&gt;&lt;br/&gt;&quot;Muitas requisições em curto intervalo.&quot;&lt;br/&gt;&lt;b&gt;Cooldown ativo:&lt;/b&gt; 60 segundos&lt;br/&gt;&lt;i&gt;Header: Retry-After: 60&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEE2E2;strokeColor=#EF4444;fontColor=#7F1D1D;fontSize=12;align=center;" vertex="1" parent="group_ratelimit">
+          <mxGeometry x="30" y="460" width="300" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rl_passed" value="&lt;b&gt;✅ Requisição Aceita&lt;/b&gt;&lt;br/&gt;Dentro do limite seguro (&lt;= 20 req/min)&lt;br/&gt;Segue para verificação de cota" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0FDF4;strokeColor=#22C55E;fontSize=12;align=center;" vertex="1" parent="group_ratelimit">
+          <mxGeometry x="30" y="600" width="300" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- COLUNA 3: CAMADA 2 - GESTÃO DE QUOTA (LONGO PRAZO) -->
+        <mxCell id="group_quota" value="3. CAMADA 2: GESTÃO DE QUOTA &amp; COOLDOWN DIÁRIO" style="swimlane;whiteSpace=wrap;html=1;rounded=1;fillColor=#F8FAFC;strokeColor=#CBD5E1;fontStyle=1;fontSize=13;fontColor=#0F172A;" vertex="1" parent="1">
+          <mxGeometry x="830" y="150" width="380" height="950" as="geometry" />
+        </mxCell>
+
+        <mxCell id="quota_middleware" value="&lt;b&gt;📊 checkAiQuota Middleware&lt;/b&gt;&lt;br/&gt;Estimativa prévia de tokens (~300 - 500)&lt;br/&gt;Intercepta ANTES de chamar a IA" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E0E7FF;strokeColor=#4F46E5;fontSize=12;align=center;" vertex="1" parent="group_quota">
+          <mxGeometry x="40" y="60" width="300" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="role_check" value="&lt;b&gt;Usuário é ADMIN?&lt;/b&gt;" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FAF5FF;strokeColor=#A855F7;fontSize=12;fontStyle=1;" vertex="1" parent="group_quota">
+          <mxGeometry x="90" y="170" width="200" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="admin_bypass_box" value="&lt;b&gt;⚡ BYPASS ADMIN DIRETO&lt;/b&gt;&lt;br/&gt;Não consome quota diária nem bloqueia.&lt;br/&gt;Segue direto para a LLM." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FAF5FF;strokeColor=#A855F7;fontSize=12;align=center;" vertex="1" parent="group_quota">
+          <mxGeometry x="40" y="290" width="300" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="date_check" value="&lt;b&gt;Virada de Dia UTC?&lt;/b&gt;&lt;br/&gt;now.date != lastResetDate" style="rhombus;whiteSpace=wrap;html=1;fillColor=#F0FDF4;strokeColor=#22C55E;fontSize=12;fontStyle=1;" vertex="1" parent="group_quota">
+          <mxGeometry x="80" y="390" width="220" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="daily_reset_box" value="&lt;b&gt;🔄 COOLDOWN DIÁRIO CONCLUÍDO&lt;/b&gt;&lt;br/&gt;• &lt;b&gt;dailyTokensUsed = 0&lt;/b&gt; (Reset Automático)&lt;br/&gt;• lastResetDate = now (00:00 UTC)&lt;br/&gt;• Saldo 100% restaurado para novo dia!" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#16A34A;fontColor=#14532D;fontSize=12;align=center;" vertex="1" parent="group_quota">
+          <mxGeometry x="40" y="520" width="300" height="75" as="geometry" />
+        </mxCell>
+
+        <mxCell id="quota_eval" value="&lt;b&gt;dailyTokensUsed + estimado&lt;br/&gt;&lt;= dailyTokenLimit?&lt;/b&gt;" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#F59E0B;fontSize=12;fontStyle=1;" vertex="1" parent="group_quota">
+          <mxGeometry x="70" y="640" width="240" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="quota_blocked" value="&lt;b&gt;⛔ HTTP 429 AI_QUOTA_EXCEEDED&lt;/b&gt;&lt;br/&gt;&quot;Você atingiu o limite diário de IA.&quot;&lt;br/&gt;&lt;b&gt;Cooldown ativo:&lt;/b&gt; Aguarda virada de dia UTC&lt;br/&gt;&lt;i&gt;Zero custo de LLM gerado!&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEE2E2;strokeColor=#EF4444;fontColor=#7F1D1D;fontSize=12;align=center;" vertex="1" parent="group_quota">
+          <mxGeometry x="40" y="780" width="300" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- COLUNA 4: EXECUÇÃO & DÉBITO ATÔMICO -->
+        <mxCell id="group_exec" value="4. EXECUÇÃO DA IA &amp; DÉBITO ATÔMICO" style="swimlane;whiteSpace=wrap;html=1;rounded=1;fillColor=#F8FAFC;strokeColor=#CBD5E1;fontStyle=1;fontSize=13;fontColor=#0F172A;" vertex="1" parent="1">
+          <mxGeometry x="1240" y="150" width="360" height="950" as="geometry" />
+        </mxCell>
+
+        <mxCell id="llm_service" value="&lt;b&gt;🤖 LlmService.generate() / Stream&lt;/b&gt;&lt;br/&gt;DeepSeek-V3 / Gemini 2.5 / Claude 3.5&lt;br/&gt;• Resilience: Circuit Breaker &amp; Retry&lt;br/&gt;• Prompt calibrado ao nível CEFR" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EFF6FF;strokeColor=#3B82F6;fontSize=12;align=center;" vertex="1" parent="group_exec">
+          <mxGeometry x="30" y="60" width="300" height="85" as="geometry" />
+        </mxCell>
+
+        <mxCell id="token_count" value="&lt;b&gt;📐 Medição Precisa de Tokens&lt;/b&gt;&lt;br/&gt;Tokens Reais = Prompt + Completion&lt;br/&gt;(ex: 45 tokens prompt + 75 resposta = 120)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F1F5F9;strokeColor=#64748B;fontSize=12;align=center;" vertex="1" parent="group_exec">
+          <mxGeometry x="30" y="190" width="300" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="mongo_debit" value="&lt;b&gt;💾 Débito Atômico no MongoDB&lt;/b&gt;&lt;br/&gt;UserQuota.findOneAndUpdate()&lt;br/&gt;&lt;code&gt;$inc: { dailyTokensUsed: actualTokens }&lt;/code&gt;&lt;br/&gt;Protegido contra race conditions" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#DCFCE7;strokeColor=#16A34A;fontSize=11;align=center;" vertex="1" parent="group_exec">
+          <mxGeometry x="50" y="310" width="260" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="client_response" value="&lt;b&gt;✅ Resposta Entregue ao Aluno&lt;/b&gt;&lt;br/&gt;• Mensagem do Tutor / Correção&lt;br/&gt;• Saldo atualizado na barra do chat&lt;br/&gt;• Contador de mensagens trocadas" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#08035D;strokeColor=#1E1B4B;fontColor=#FFFFFF;fontSize=12;align=center;" vertex="1" parent="group_exec">
+          <mxGeometry x="30" y="460" width="300" height="85" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cooldown_summary" value="&lt;b&gt;💡 RESUMO EXECUTIVO (SÓCIO)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;&lt;b&gt;1. Proteção de Custos:&lt;/b&gt; A cota bloqueia ANTES da chamada à OpenAI/DeepSeek. Zero desperdício financeiro.&lt;br/&gt;&lt;br/&gt;&lt;b&gt;2. Autonomia do Aluno:&lt;/b&gt; O aluno tem cota diária garantida. Se esgotar, tem incentivo claro para upgrade (Basic/Premium).&lt;br/&gt;&lt;br/&gt;&lt;b&gt;3. Professor Livre:&lt;/b&gt; Limite de 300k permite corrigir dezenas de tarefas diárias com folga.&lt;br/&gt;&lt;br/&gt;&lt;b&gt;4. Zero Manutenção:&lt;/b&gt; Reset diário automático às 00:00 UTC sem cron jobs." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EEF2FF;strokeColor=#6366F1;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="group_exec">
+          <mxGeometry x="30" y="650" width="300" height="230" as="geometry" />
+        </mxCell>
+
+        <!-- CONEXÕES & SETAS (EDGES) -->
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#475569;" edge="1" parent="1" source="user_aluno" target="req_node">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#475569;" edge="1" parent="1" source="user_prof" target="req_node">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#475569;" edge="1" parent="1" source="user_admin" target="req_node">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#08035D;" edge="1" parent="1" source="req_node" target="rl_middleware">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#64748B;" edge="1" parent="1" source="rl_middleware" target="redis_node">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#64748B;" edge="1" parent="1" source="redis_node" target="rl_decision">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e7" value="Sim (&gt; 20 req/min)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#EF4444;fontColor=#EF4444;fontStyle=1;" edge="1" parent="1" source="rl_decision" target="rl_blocked">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e8" value="Não (&lt;= 20)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#16A34A;fontColor=#16A34A;fontStyle=1;" edge="1" parent="1" source="rl_decision" target="rl_passed">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#08035D;" edge="1" parent="1" source="rl_passed" target="quota_middleware">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#4F46E5;" edge="1" parent="1" source="quota_middleware" target="role_check">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e11" value="Sim (Admin)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#A855F7;fontColor=#A855F7;fontStyle=1;" edge="1" parent="1" source="role_check" target="admin_bypass_box">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e12" value="Não (Aluno/Prof)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#475569;fontStyle=1;" edge="1" parent="1" source="role_check" target="date_check">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1090" y="250" />
+              <mxPoint x="1090" y="435" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e13" value="Sim (Novo Dia)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#16A34A;fontColor=#16A34A;fontStyle=1;" edge="1" parent="1" source="date_check" target="daily_reset_box">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e14" value="Mesmo dia" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#475569;" edge="1" parent="1" source="date_check" target="quota_eval">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1110" y="435" />
+              <mxPoint x="1110" y="690" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#16A34A;" edge="1" parent="1" source="daily_reset_box" target="quota_eval">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e16" value="Não (Esgotado)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#EF4444;fontColor=#EF4444;fontStyle=1;" edge="1" parent="1" source="quota_eval" target="quota_blocked">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e17" value="Sim (Tem Saldo)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#16A34A;fontColor=#16A34A;fontStyle=1;" edge="1" parent="1" source="quota_eval" target="llm_service">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1210" y="690" />
+              <mxPoint x="1210" y="243" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e18" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#A855F7;" edge="1" parent="1" source="admin_bypass_box" target="llm_service">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#3B82F6;" edge="1" parent="1" source="llm_service" target="token_count">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e20" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#16A34A;" edge="1" parent="1" source="token_count" target="mongo_debit">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e21" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#08035D;" edge="1" parent="1" source="mongo_debit" target="client_response">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
