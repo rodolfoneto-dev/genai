@@ -166,6 +166,7 @@ class LlmService {
       );
 
       if (primaryBreaker) primaryBreaker.recordSuccess();
+      console.log(`✨ [LLM Service] Sucesso via [${result.provider}/${result.model}] em ${result.durationMs}ms (${result.usage?.totalTokens || 0} tokens)`);
       return result;
     } catch (primaryErr) {
       if (primaryErr.name === 'AbortError' || signal?.aborted) {
@@ -206,6 +207,7 @@ class LlmService {
           );
 
           if (fallbackBreaker) fallbackBreaker.recordSuccess();
+          console.log(`✅ [LLM Service Fallback] Sucesso via [${fallbackResult.provider}/${fallbackResult.model}] em ${fallbackResult.durationMs}ms (${fallbackResult.usage?.totalTokens || 0} tokens)`);
           return fallbackResult;
         } catch (fallbackErr) {
           if (fallbackBreaker) fallbackBreaker.recordFailure(fallbackErr);
@@ -255,6 +257,9 @@ class LlmService {
           hasEmittedChunk = true;
           if (primaryBreaker) primaryBreaker.recordSuccess();
         }
+        if (chunk.isDone) {
+          console.log(`✨ [LLM Service Stream] Stream finalizado com sucesso via [${chunk.provider || primaryProviderName}] em ${chunk.durationMs || 0}ms (TTFT: ${chunk.ttftMs || 0}ms, ${chunk.usage?.totalTokens || 0} tokens)`);
+        }
         yield chunk;
       }
     } catch (primaryErr) {
@@ -289,6 +294,9 @@ class LlmService {
               if (!fallbackEmitted && !chunk.isDone) {
                 fallbackEmitted = true;
                 if (fallbackBreaker) fallbackBreaker.recordSuccess();
+              }
+              if (chunk.isDone) {
+                console.log(`✅ [LLM Service Stream Fallback] Stream finalizado com sucesso via [${chunk.provider || fallbackProviderName}] em ${chunk.durationMs || 0}ms (${chunk.usage?.totalTokens || 0} tokens)`);
               }
               yield chunk;
             }

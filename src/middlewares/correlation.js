@@ -19,6 +19,13 @@ function correlationMiddleware(req, res, next) {
     res.setHeader('traceparent', traceparent);
   }
 
+  res.on('finish', () => {
+    if (!req.path.endsWith('/health') && req.path !== '/docs.json' && req.path !== '/docs') {
+      const durationMs = Math.round(performance.now() - req._startTime);
+      console.log(`🌐 [HTTP ${res.statusCode}] ${req.method} ${req.originalUrl || req.url} - ${durationMs}ms [${correlationId}]`);
+    }
+  });
+
   next();
 }
 

@@ -28,6 +28,8 @@ class UsageEventBus extends EventEmitter {
       if (sanitized.userId && sanitized.totalTokens > 0) {
         await UserQuota.consumeTokens(sanitized.userId, sanitized.totalTokens);
       }
+
+      console.log(`📊 [UsageEventBus] Consumo FinOps debitado: [${sanitized.feature}] via ${sanitized.provider} - ${sanitized.totalTokens} tokens (Usuário: ${sanitized.userId || 'anon'})`);
     } catch (err) {
       console.error('⚠️ [UsageEventBus] Erro ao persistir evento de uso em segundo plano:', err.message);
     }

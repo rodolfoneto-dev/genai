@@ -45,6 +45,7 @@ router.post('/generate', apiRateLimiter, authenticate, checkRole('professor', 'a
     // 1. Checagem de Cache Semântico (FinOps $0)
     const cachedData = await exerciseCache.get(topic, cefrLevel, count, type);
     if (cachedData) {
+      console.log(`⚡ [ExerciseCache] Cache Hit no Redis para "${topic}" (${cefrLevel}) - Resposta imediata ($0)`);
       return res.status(200).json({
         data: cachedData,
         cached: true,
