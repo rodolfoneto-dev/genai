@@ -65,6 +65,7 @@ const TutorSessionSchema = new mongoose.Schema(
 );
 
 TutorSessionSchema.index({ userId: 1, active: 1 });
+TutorSessionSchema.index({ userId: 1, topic: 1, active: 1 });
 
 /**
  * Adiciona mensagem à sessão e aplica a janela deslizante de contexto delimitada (máx 20)
@@ -129,35 +130,36 @@ TutorSessionSchema.statics.boundedAppend = async function (sessionId, newMessage
 };
 
 /**
- * Helper estático para buscar ou criar a sessão ativa do usuário
+ * Helper estático para buscar ou criar a sessão ativa do usuário vinculada ao tópico
  */
 TutorSessionSchema.statics.getActiveSession = async function (userId, cefrLevel = 'B1', topic = null) {
   const defaultWindow = getDefaultContextWindow();
+  const targetTopic = topic || 'General Daily English';
 
   if (mongoose.connection.readyState !== 1) {
     return new this({
       userId,
       cefrLevel,
-      topic: topic || 'General Conversation & Daily English',
+      topic: targetTopic,
       maxContextMessages: defaultWindow,
       messages: [],
     });
   }
 
-  let session = await this.findOne({ userId, active: true }).sort({ updatedAt: -1 });
+  // Busca a sessão ativa específica do usuário para este tópico exato
+  let session = await this.findOne({ userId, topic: targetTopic, active: true }).sort({ updatedAt: -1 });
 
   if (!session) {
     session = new this({
       userId,
       cefrLevel,
-      topic: topic || 'General Conversation & Daily English',
+      topic: targetTopic,
       maxContextMessages: defaultWindow,
       messages: [],
     });
     await session.save();
   } else if (cefrLevel && session.cefrLevel !== cefrLevel) {
     session.cefrLevel = cefrLevel;
-    if (topic) session.topic = topic;
     await session.save();
   }
 

@@ -18,6 +18,36 @@ const ChatInputSchema = z.object({
 });
 
 /**
+ * GET /genai/tutor/history
+ * Recupera o histórico de mensagens da sessão ativa para o tópico selecionado.
+ * Acessível por: Aluno e Professor.
+ */
+router.get('/history', authenticate, checkRole('aluno', 'professor'), async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const topic = (req.query.topic && String(req.query.topic).trim()) || 'General Daily English';
+    const cefrLevel = (req.query.cefrLevel && String(req.query.cefrLevel).trim()) || 'B1';
+
+    let session = null;
+    try {
+      session = await TutorSession.getActiveSession(userId, cefrLevel, topic);
+    } catch {
+      session = new TutorSession({ userId, cefrLevel, topic, messages: [] });
+    }
+
+    return res.status(200).json({
+      sessionId: session._id || 'temp_session',
+      cefrLevel: session.cefrLevel || cefrLevel,
+      topic: session.topic || topic,
+      totalMessages: session.messages ? session.messages.length : 0,
+      messages: session.messages || [],
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
  * POST /genai/tutor/chat
  * Conversa interativa com o tutor UP!.
  * Acessível por: Aluno e Professor.

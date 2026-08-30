@@ -63,6 +63,32 @@ describe('GenAI Service - Domain Routes Integration Tests', () => {
     });
   });
 
+  describe('GET /genai/tutor/history', () => {
+    it('deve retornar 401 se não estiver autenticado', async () => {
+      const res = await request(app).get('/genai/tutor/history');
+      expect(res.status).toBe(401);
+      expect(res.body.error.code).toBe('UNAUTHORIZED');
+    });
+
+    it('deve retornar histórico isolado por tópico (200)', async () => {
+      const res = await request(app)
+        .get('/genai/tutor/history')
+        .query({ topic: 'Airport & Travel', cefrLevel: 'A2' })
+        .set('Authorization', `Bearer ${studentToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual(
+        expect.objectContaining({
+          sessionId: expect.any(String),
+          topic: 'Airport & Travel',
+          cefrLevel: 'A2',
+          totalMessages: expect.any(Number),
+          messages: expect.any(Array),
+        })
+      );
+    });
+  });
+
   describe('POST /genai/tutor/chat/stream (SSE)', () => {
     it('deve retornar 401 se não estiver autenticado', async () => {
       const res = await request(app).post('/genai/tutor/chat/stream').send({ message: 'Hello' });
