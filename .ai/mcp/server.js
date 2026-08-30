@@ -27,7 +27,7 @@ server.registerResource(
     contents: [
       {
         uri: uri.href,
-        text: `# 🧠 English Fox GenAI Service Contract
+        text: `# 🧠 UP!Experience GenAI Service Contract
 - **Porta**: 4004 (REST)
 - **Provedores de IA**: Gemini 2.5 Flash / Claude 3.5 Haiku
 - **Rotas**:
@@ -63,7 +63,7 @@ server.registerTool(
             {
               service: 'genai-service',
               port: 4004,
-              providers: ['gemini', 'claude'],
+              providers: ['gemini', 'claude', 'opencode', 'deepseek'],
               defaultProvider: process.env.DEFAULT_AI_PROVIDER || 'gemini',
               cefrLevels: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'],
               tierLimits: {

@@ -1,15 +1,30 @@
 const BaseAiAdapter = require('./base.adapter');
 
 class MockAiAdapter extends BaseAiAdapter {
-  constructor() {
+  constructor(providerName = 'gemini') {
     super('mock');
+    this.providerName = providerName;
+    this.failureConfig = null;
   }
 
   isAvailable() {
     return true;
   }
 
+  simulateFailure(error, count = 1) {
+    this.failureConfig = { error, count, attempts: 0 };
+  }
+
+  clearFailure() {
+    this.failureConfig = null;
+  }
+
   async generate({ systemPrompt = '', messages = [], maxTokens = 500, jsonMode = false }) {
+    if (this.failureConfig && this.failureConfig.attempts < this.failureConfig.count) {
+      this.failureConfig.attempts++;
+      throw this.failureConfig.error;
+    }
+
     const lastUserMessage = messages.filter((m) => m.role === 'user').pop()?.content || '';
     const durationMs = 15;
 
@@ -19,8 +34,8 @@ class MockAiAdapter extends BaseAiAdapter {
       return {
         content: mockReply,
         parsedJson: null,
-        provider: 'gemini',
-        model: 'gemini-2.5-flash-mock',
+        provider: this.providerName,
+        model: `${this.providerName}-mock`,
         usage: {
           promptTokens: 45,
           completionTokens: 35,
@@ -110,6 +125,69 @@ class MockAiAdapter extends BaseAiAdapter {
         totalTokens: 290,
       },
       durationMs,
+    };
+  }
+
+  async *generateStream({ systemPrompt = '', messages = [], maxTokens = 500, signal = null }) {
+    if (signal?.aborted) {
+      const abortErr = new Error('Generation aborted by client');
+      abortErr.name = 'AbortError';
+      throw abortErr;
+    }
+
+    if (this.failureConfig && this.failureConfig.attempts < this.failureConfig.count) {
+      this.failureConfig.attempts++;
+      throw this.failureConfig.error;
+    }
+
+    const lastUserMessage = messages.filter((m) => m.role === 'user').pop()?.content || '';
+    const fullText = `Hello! That's a great observation about "${lastUserMessage.slice(0, 30)}". How often do you practice this in English?`;
+    
+    // Divide a mensagem em 4 chunks para simular streaming realista
+    const words = fullText.split(' ');
+    const chunks = [];
+    const chunkSize = Math.ceil(words.length / 4);
+    for (let i = 0; i < words.length; i += chunkSize) {
+      const chunkWords = words.slice(i, i + chunkSize).join(' ');
+      chunks.push(i === 0 ? chunkWords : ' ' + chunkWords);
+    }
+
+    const startTime = performance.now();
+    let ttftMs = null;
+
+    for (let i = 0; i < chunks.length; i++) {
+      if (signal?.aborted) {
+        const abortErr = new Error('Generation aborted by client');
+        abortErr.name = 'AbortError';
+        throw abortErr;
+      }
+
+      if (i === 0) {
+        ttftMs = Math.round(performance.now() - startTime);
+      }
+
+      yield {
+        text: chunks[i],
+        isDone: false,
+      };
+    }
+
+    const durationMs = Math.round(performance.now() - startTime);
+    const promptTokens = 45;
+    const completionTokens = 35;
+
+    yield {
+      text: '',
+      isDone: true,
+      provider: this.providerName,
+      model: `${this.providerName}-mock`,
+      usage: {
+        promptTokens,
+        completionTokens,
+        totalTokens: promptTokens + completionTokens,
+      },
+      durationMs,
+      ttftMs: ttftMs || durationMs,
     };
   }
 }

@@ -21,7 +21,7 @@ const AiUsageLogSchema = new mongoose.Schema(
     },
     provider: {
       type: String,
-      enum: ['gemini', 'claude'],
+      enum: ['gemini', 'claude', 'opencode', 'deepseek'],
       required: true,
     },
     model: {
@@ -79,6 +79,8 @@ const AiUsageLogSchema = new mongoose.Schema(
 AiUsageLogSchema.index({ userId: 1, createdAt: -1 });
 AiUsageLogSchema.index({ feature: 1, createdAt: -1 });
 AiUsageLogSchema.index({ createdAt: 1, status: 1 });
+AiUsageLogSchema.index({ createdAt: 1, feature: 1 });
+AiUsageLogSchema.index({ createdAt: 1, provider: 1 });
 
 /**
  * Tabela de custos aproximados por 1k tokens (USD)
@@ -88,6 +90,11 @@ const PRICING_TABLE = {
   'gemini-1.5-flash': { input: 0.000075, output: 0.0003 },
   'claude-3-5-haiku-20241022': { input: 0.0008, output: 0.004 },
   'claude-3-5-haiku': { input: 0.0008, output: 0.004 },
+  'big-pickle': { input: 0.0001, output: 0.0002 },
+  'deepseek-chat': { input: 0.00014, output: 0.00028 },
+  'deepseek-reasoner': { input: 0.00055, output: 0.00219 },
+  'deepseek-v4-flash': { input: 0.00014, output: 0.00028 },
+  'deepseek-v4-pro': { input: 0.00055, output: 0.00219 },
 };
 
 /**
@@ -133,8 +140,9 @@ AiUsageLogSchema.statics.logUsage = async function (data) {
 AiUsageLogSchema.statics.getFinOpsAnalytics = async function (filters = {}) {
   if (mongoose.connection.readyState !== 1) {
     return {
-      overview: { totalRequests: 0, totalTokens: 0, totalCostUsd: 0, avgDurationMs: 0 },
+      overview: { totalRequests: 0, totalTokens: 0, totalCostUsd: 0, avgDurationMs: 0, avgTtftMs: 0 },
       byFeature: [],
+      byProvider: [],
       topConsumers: [],
     };
   }
@@ -144,8 +152,10 @@ AiUsageLogSchema.statics.getFinOpsAnalytics = async function (filters = {}) {
     if (filters.startDate) match.createdAt.$gte = new Date(filters.startDate);
     if (filters.endDate) match.createdAt.$lte = new Date(filters.endDate);
   }
+  if (filters.feature) match.feature = filters.feature;
+  if (filters.provider) match.provider = filters.provider;
 
-  const [summary, byFeature, byUser] = await Promise.all([
+  const [summary, byFeature, byProvider, byUser] = await Promise.all([
     this.aggregate([
       { $match: match },
       {
@@ -155,6 +165,7 @@ AiUsageLogSchema.statics.getFinOpsAnalytics = async function (filters = {}) {
           totalTokens: { $sum: '$totalTokens' },
           totalCostUsd: { $sum: '$estimatedCostUsd' },
           avgDurationMs: { $avg: '$durationMs' },
+          avgTtftMs: { $avg: '$metadata.ttftMs' },
         },
       },
     ]),
@@ -174,6 +185,18 @@ AiUsageLogSchema.statics.getFinOpsAnalytics = async function (filters = {}) {
       { $match: match },
       {
         $group: {
+          _id: '$provider',
+          requests: { $sum: 1 },
+          tokens: { $sum: '$totalTokens' },
+          costUsd: { $sum: '$estimatedCostUsd' },
+        },
+      },
+      { $sort: { costUsd: -1 } },
+    ]),
+    this.aggregate([
+      { $match: match },
+      {
+        $group: {
           _id: '$userId',
           requests: { $sum: 1 },
           tokens: { $sum: '$totalTokens' },
@@ -186,8 +209,9 @@ AiUsageLogSchema.statics.getFinOpsAnalytics = async function (filters = {}) {
   ]);
 
   return {
-    overview: summary[0] || { totalRequests: 0, totalTokens: 0, totalCostUsd: 0, avgDurationMs: 0 },
+    overview: summary[0] || { totalRequests: 0, totalTokens: 0, totalCostUsd: 0, avgDurationMs: 0, avgTtftMs: 0 },
     byFeature,
+    byProvider,
     topConsumers: byUser,
   };
 };

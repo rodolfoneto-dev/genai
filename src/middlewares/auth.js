@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 
 /**
  * Middleware para verificar e decodificar token JWT obrigatório.
- * Compatível com o ecossistema English Fox (auth, academy, chat).
+ * Compatível com o ecossistema UP!Experience (auth, academy, chat).
  */
 const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;

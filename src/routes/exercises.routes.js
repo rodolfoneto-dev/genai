@@ -7,6 +7,7 @@ const { getExerciseGenerationPrompt } = require('../services/prompt-templates');
 const exerciseCache = require('../services/exercise-cache.service');
 const AiUsageLog = require('../models/AiUsageLog');
 const UserQuota = require('../models/UserQuota');
+const usageEventBus = require('../services/usage-event-bus');
 
 const router = express.Router();
 
@@ -42,8 +43,9 @@ router.post('/generate', apiRateLimiter, authenticate, checkRole('professor', 'a
     const userId = req.user.id;
 
     // 1. Checagem de Cache Semântico (FinOps $0)
-    const cachedData = exerciseCache.get(topic, cefrLevel, count, type);
+    const cachedData = await exerciseCache.get(topic, cefrLevel, count, type);
     if (cachedData) {
+      console.log(`⚡ [ExerciseCache] Cache Hit no Redis para "${topic}" (${cefrLevel}) - Resposta imediata ($0)`);
       return res.status(200).json({
         data: cachedData,
         cached: true,
@@ -69,26 +71,22 @@ router.post('/generate', apiRateLimiter, authenticate, checkRole('professor', 'a
     };
 
     // Salva no cache
-    exerciseCache.set(topic, cefrLevel, count, type, exercisesPayload);
+    await exerciseCache.set(topic, cefrLevel, count, type, exercisesPayload);
 
-    // 2. Registra uso e debita quota
-    try {
-      await Promise.all([
-        AiUsageLog.logUsage({
-          userId,
-          role: req.user.role,
-          feature: 'exercise_generation',
-          provider: aiResponse.provider,
-          model: aiResponse.model,
-          promptTokens: aiResponse.usage?.promptTokens || 0,
-          completionTokens: aiResponse.usage?.completionTokens || 0,
-          durationMs: aiResponse.durationMs || 0,
-          cefrLevel,
-          metadata: { topic, count, type },
-        }),
-        UserQuota.consumeTokens(userId, aiResponse.usage?.totalTokens || 0),
-      ]);
-    } catch {}
+    // 2. Registra uso e debita quota de forma assíncrona
+    usageEventBus.dispatch({
+      userId,
+      role: req.user.role,
+      feature: 'exercise_generation',
+      provider: aiResponse.provider,
+      model: aiResponse.model,
+      promptTokens: aiResponse.usage?.promptTokens || 0,
+      completionTokens: aiResponse.usage?.completionTokens || 0,
+      totalTokens: aiResponse.usage?.totalTokens || 0,
+      durationMs: aiResponse.durationMs || 0,
+      cefrLevel,
+      metadata: { topic, count, type },
+    });
 
     return res.status(200).json({
       data: exercisesPayload,

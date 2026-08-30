@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 let isConnected = false;
 
 const connectDB = async (uri) => {
-  const mongoUri = uri || process.env.MONGODB_URI || 'mongodb://localhost:27017/englishfox_genai';
+  const mongoUri = uri || process.env.MONGODB_URI || 'mongodb://localhost:27017/upexperience_genai';
 
   if (isConnected && mongoose.connection.readyState === 1) {
     return mongoose.connection;
