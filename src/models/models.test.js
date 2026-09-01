@@ -78,8 +78,8 @@ describe('GenAI Service - Mongoose Models Unit Tests', () => {
     });
 
     it('checkAndResetDailyQuota deve zerar dailyTokensUsed se a data for de ontem', () => {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
+      jest.useFakeTimers().setSystemTime(new Date('2026-05-15T12:00:00Z'));
+      const yesterday = new Date('2026-05-14T12:00:00Z');
 
       const quota = new UserQuota({
         userId: 'user_yesterday',
@@ -92,6 +92,7 @@ describe('GenAI Service - Mongoose Models Unit Tests', () => {
       quota.checkAndResetDailyQuota();
       expect(quota.dailyTokensUsed).toBe(0);
       expect(quota.monthlyTokensUsed).toBe(15000);
+      jest.useRealTimers();
     });
 
     it('consumeTokensAtomic deve permitir consumo dentro do limite e atualizar saldo', async () => {

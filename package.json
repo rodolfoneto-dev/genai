@@ -7,9 +7,11 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "test": "jest --runInBand --forceExit",
+    "test:mcp": "jest .ai/mcp/server.test.js --forceExit",
     "test:watch": "jest --watch",
     "token:gen": "node scripts/generate-token.js",
-    "mcp": "node .ai/mcp/server.js"
+    "mcp": "node .ai/mcp/server.js",
+    "prepare": "git config core.hooksPath .githooks || true"
   },
   "keywords": [
     "genai",

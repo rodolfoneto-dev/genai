@@ -1,0 +1,20 @@
+#!/bin/sh
+
+echo "🔍 Executando verificações de qualidade pré-push (genai)..."
+
+echo "\n🧠 [1/2] Executando Testes Automatizados & Camada de IA..."
+npm test
+if [ $? -ne 0 ]; then
+  echo "❌ Falha nos testes de IA (genai). Push bloqueado."
+  exit 1
+fi
+
+echo "\n🤖 [2/2] Executando Testes do MCP Server..."
+npm run test:mcp
+if [ $? -ne 0 ]; then
+  echo "❌ Falha nos testes do MCP Server (genai). Push bloqueado."
+  exit 1
+fi
+
+echo "\n✅ Todas as verificações pré-push do genai foram aprovadas com sucesso! Push liberado."
+exit 0
